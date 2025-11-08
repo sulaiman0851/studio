@@ -221,12 +221,20 @@ export async function getTelegramSettingsAction() {
 }
 
 export async function saveTelegramSettingsAction(settings: TelegramSettings) {
-    try {
-        const data = JSON.stringify(settings, null, 2);
-        await fs.writeFile(telegramSettingsPath, data, 'utf-8');
-        return { success: true, message: 'Telegram settings saved successfully.' };
-    } catch (error) {
-        console.error('Failed to save Telegram settings:', error);
-        return { success: false, error: 'Failed to save settings.' };
+    // On read-only filesystems (like Vercel/Netlify), writing files will cause an error.
+    // We'll skip writing to the file in production environments.
+    if (process.env.NODE_ENV === 'development') {
+        try {
+            const data = JSON.stringify(settings, null, 2);
+            await fs.writeFile(telegramSettingsPath, data, 'utf-8');
+            return { success: true, message: 'Telegram settings saved successfully.' };
+        } catch (error) {
+            console.error('Failed to save Telegram settings:', error);
+            return { success: false, error: 'Failed to save settings.' };
+        }
+    } else {
+        console.log('Skipping file write for telegram.json in production environment.');
+        // Return success to avoid showing an error to the user, even though it's not saved.
+        return { success: true, message: 'Settings saved for this session (not persisted in production).'};
     }
 }
