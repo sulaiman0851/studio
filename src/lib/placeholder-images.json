@@ -1,0 +1,22 @@
+{
+  "placeholderImages": [
+    {
+      "id": "job-photo-1",
+      "description": "Photo of a modem installation.",
+      "imageUrl": "https://images.unsplash.com/photo-1751486403890-793880b12adb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxtb2RlbSUyMGluc3RhbGxhdGlvbnxlbnwwfHx8fDE3NjI1NzA0MzJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "modem installation"
+    },
+    {
+      "id": "job-photo-2",
+      "description": "Photo of fiber optic cable routing.",
+      "imageUrl": "https://images.unsplash.com/photo-1697618459160-aaabb2e07b6e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxmaWJlciUyMGNhYmxlfGVufDB8fHx8MTc2MjU3MDQzMnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "fiber cable"
+    },
+    {
+      "id": "job-photo-3",
+      "description": "ONT device mounted on a wall.",
+      "imageUrl": "https://picsum.photos/seed/job3/600/400",
+      "imageHint": "ONT device"
+    }
+  ]
+}

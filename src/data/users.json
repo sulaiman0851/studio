@@ -1,0 +1,16 @@
+[
+  {
+    "name": "Sulaiman",
+    "email": "sulaimanmajid77@gmail.com",
+    "role": "Admin",
+    "avatar": "https://i.pravatar.cc/150?u=sulaimanmajid77@gmail.com",
+    "id": "USR-001"
+  },
+  {
+    "name": "Reyhan",
+    "email": "reyhan@mail.me",
+    "role": "Engineer",
+    "avatar": "https://i.pravatar.cc/150?u=reyhan@mail.me",
+    "id": "USR-002"
+  }
+]
