@@ -23,7 +23,6 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import { Loader2, HardHat } from 'lucide-react';
-import { useAppContext } from '@/components/app-shell';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
@@ -42,13 +41,6 @@ export default function LoginPage() {
   const [currentBgIndex, setCurrentBgIndex] = useState(0);
   const router = useRouter();
   const supabase = createClientComponentClient();
-  const { currentUser } = useAppContext();
-
-  useEffect(() => {
-    if (currentUser) {
-      router.push('/dashboard');
-    }
-  }, [currentUser, router]);
 
   useEffect(() => {
     const interval = setInterval(() => {

@@ -80,30 +80,32 @@ function AppProvider({ children }: { children: React.ReactNode }) {
   const supabase = createClientComponentClient();
 
   useEffect(() => {
-    async function loadData() {
-      setLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session) {
-        const { users: fetchedUsers, jobs: fetchedJobs, currentUser: fetchedCurrentUser } = await getInitialData();
-        setUsers(fetchedUsers);
-        setJobs(fetchedJobs);
-        setCurrentUser(fetchedCurrentUser);
-      }
-      setLoading(false);
+    async function loadData(session: any) {
+        if (session) {
+            const { users: fetchedUsers, jobs: fetchedJobs, currentUser: fetchedCurrentUser } = await getInitialData();
+            setUsers(fetchedUsers);
+            setJobs(fetchedJobs);
+            setCurrentUser(fetchedCurrentUser);
+        } else {
+            setCurrentUser(null);
+            setJobs([]);
+            setUsers([]);
+        }
+        setLoading(false);
     }
     
-    loadData();
+    // Initial load
+    supabase.auth.getSession().then(({ data: { session } }) => {
+        loadData(session);
+    });
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') {
-          loadData();
+          loadData(session);
         }
         if (event === 'SIGNED_OUT') {
-          setCurrentUser(null);
-          setJobs([]);
-          setUsers([]);
+          loadData(null);
           router.push('/login');
         }
       }
@@ -135,11 +137,14 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
     const isAuthPage = pathname === '/login' || pathname === '/register';
 
     useEffect(() => {
-      if (!loading && !currentUser && !isAuthPage) {
-        router.push('/login');
-      }
-      // No redirect from auth page if logged in, handled by auth pages themselves
-    }, [loading, currentUser, isAuthPage, router]);
+        if (loading) return;
+
+        if (!currentUser && !isAuthPage) {
+            router.push('/login');
+        } else if (currentUser && isAuthPage) {
+            router.push('/dashboard');
+        }
+    }, [loading, currentUser, isAuthPage, router, pathname]);
     
 
     if (loading && !isAuthPage) {
@@ -147,7 +152,13 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
     }
     
     if (isAuthPage) {
-        return <>{children}</>;
+        // Show loading animation on auth pages if we are still checking the session
+        // but allow rendering the page if the user is not logged in.
+        if (loading) return <LoadingAnimation />;
+        if (!currentUser) return <>{children}</>;
+        // If user is loaded and on auth page, the useEffect above will redirect them.
+        // Show loading anim in the meantime.
+        return <LoadingAnimation />;
     }
     
     if (!currentUser) {
