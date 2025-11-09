@@ -84,10 +84,10 @@ export default function RegisterPage() {
     } else {
         toast({
             title: 'Registration Successful',
-            description: 'Please check your email to verify your account.',
+            description: 'Your account has been created. You can now sign in.',
         });
         router.push('/login');
-        setIsLoading(false);
+        // No need to set isLoading to false, as we are navigating away
     }
   }
 
