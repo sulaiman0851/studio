@@ -48,12 +48,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import { MoreHorizontal, ArrowUpDown, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import type { User } from '@/lib/types';
+import type { User, UserRole } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import { updateUserRoleAction, deleteUserAction } from '@/lib/actions';
 
-const roleVariantMap: Record<User['role'], 'default' | 'secondary' | 'outline'> = {
+const roleVariantMap: Record<UserRole, 'default' | 'secondary' | 'outline'> = {
   Admin: 'default',
   Senior: 'secondary',
   Engineer: 'outline',
@@ -61,7 +61,7 @@ const roleVariantMap: Record<User['role'], 'default' | 'secondary' | 'outline'> 
 
 interface UserManagementProps {
   initialUsers: User[];
-  setUsers: (users: User[]) => void;
+  setUsers: React.Dispatch<React.SetStateAction<User[]>>;
 }
 
 export function UserManagement({ initialUsers, setUsers }: UserManagementProps) {
@@ -70,10 +70,10 @@ export function UserManagement({ initialUsers, setUsers }: UserManagementProps) 
   const [userToDelete, setUserToDelete] = React.useState<User | null>(null);
   const [isUpdating, setIsUpdating] = React.useState(false);
 
-  const handleRoleChange = async (userId: string, newRole: User['role']) => {
+  const handleRoleChange = async (userId: string, newRole: UserRole) => {
     setIsUpdating(true);
     const originalUsers = initialUsers;
-    // Optimistic update
+    
     setUsers(currentUsers =>
       currentUsers.map(user =>
         user.id === userId ? { ...user, role: newRole } : user
@@ -88,7 +88,6 @@ export function UserManagement({ initialUsers, setUsers }: UserManagementProps) 
             description: `User role has been changed to ${newRole}.`
         });
     } else {
-        // Revert on failure
         setUsers(originalUsers);
         toast({
             variant: 'destructive',
@@ -102,7 +101,7 @@ export function UserManagement({ initialUsers, setUsers }: UserManagementProps) 
   const handleDeleteUser = async (userId: string) => {
     setIsUpdating(true);
     const originalUsers = initialUsers;
-    // Optimistic update
+    
     setUsers(currentUsers => currentUsers.filter(user => user.id !== userId));
     setUserToDelete(null);
 
@@ -114,7 +113,6 @@ export function UserManagement({ initialUsers, setUsers }: UserManagementProps) 
             description: "The user has been successfully removed."
         });
     } else {
-        // Revert on failure
         setUsers(originalUsers);
         toast({
             variant: 'destructive',

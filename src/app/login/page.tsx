@@ -8,6 +8,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -21,7 +22,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
-import { useAppContext } from '@/components/app-shell';
 import { Loader2, HardHat } from 'lucide-react';
 
 const loginSchema = z.object({
@@ -40,7 +40,18 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [currentBgIndex, setCurrentBgIndex] = useState(0);
   const router = useRouter();
-  const { users, setCurrentUser } = useAppContext();
+  const supabase = createClientComponentClient();
+  
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        router.push('/dashboard');
+      }
+    };
+    checkUser();
+  }, [router, supabase.auth]);
+
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -60,24 +71,25 @@ export default function LoginPage() {
 
   async function onSubmit(values: z.infer<typeof loginSchema>) {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const user = users.find(u => u.email === values.email);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: values.email,
+      password: values.password,
+    });
 
-    if (user) {
-      setCurrentUser(user);
-      toast({
-        title: 'Login Successful',
-        description: `Welcome back, ${user.name}!`,
-      });
-      router.push('/dashboard');
-    } else {
+    if (error) {
       toast({
         variant: 'destructive',
         title: 'Login Failed',
-        description: 'Invalid email or password. Please try again.',
+        description: error.message || 'Invalid email or password. Please try again.',
       });
       setIsLoading(false);
+    } else {
+      toast({
+        title: 'Login Successful',
+        description: `Welcome back!`,
+      });
+      // The onAuthStateChange listener in app-shell will handle the redirect
+      router.refresh();
     }
   }
 

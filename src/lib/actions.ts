@@ -1,27 +1,48 @@
 
 'use server';
 
-import fs from 'fs/promises';
-import path from 'path';
 import { getAiSuggestion, AiSuggestionInput } from '@/ai/flows/ai-suggestion-helper';
 import { z } from 'zod';
-import { getJobs as getJobsData, getUsers as getUsersData, saveUsers, saveJobs } from './data';
-import type { Job, User, TelegramSettings } from './types';
+import type { Job, User, TelegramSettings, UserRole } from './types';
 import { revalidatePath } from 'next/cache';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
+import { supabase as supabaseAdmin } from './supabase/admin'; // Use admin for server-side mutations
+
+function createSupabaseServerClient() {
+    const cookieStore = cookies();
+    return createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                get(name: string) {
+                    return cookieStore.get(name)?.value;
+                },
+            },
+        }
+    );
+}
 
 // --- Telegram Notification Logic ---
 
-const telegramSettingsPath = path.join(process.cwd(), 'src', 'data', 'telegram.json');
-
 async function getTelegramSettings(): Promise<TelegramSettings | null> {
     try {
-        if (require('fs').existsSync(telegramSettingsPath)) {
-            const data = await fs.readFile(telegramSettingsPath, 'utf-8');
-            return JSON.parse(data);
+        const { data, error } = await supabaseAdmin
+            .from('settings')
+            .select('value')
+            .eq('key', 'telegram')
+            .single();
+
+        if (error || !data) {
+             if (error && error.code !== 'PGRST116') { // Ignore "no rows found" error
+                console.error('Failed to read Telegram settings:', error.message);
+            }
+            return null;
         }
-        return null;
+        return data.value as TelegramSettings;
     } catch (error) {
-        console.error('Failed to read Telegram settings:', error);
+        console.error('Error fetching Telegram settings:', error);
         return null;
     }
 }
@@ -39,9 +60,7 @@ async function sendTelegramNotification(message: string) {
     try {
         const response = await fetch(url, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 chat_id: chatId,
                 text: message,
@@ -90,151 +109,196 @@ export async function getAiSuggestionAction(formData: AiSuggestionInput) {
 // --- Data Actions ---
 
 export async function getInitialData() {
-  const jobs = await getJobsData();
-  const users = await getUsersData();
-  return { jobs, users };
+    const supabase = createSupabaseServerClient();
+    
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+
+    let currentUser: User | null = null;
+    if (authUser) {
+        const { data: userProfile } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', authUser.id)
+            .single();
+        currentUser = userProfile as User | null;
+    }
+
+    const { data: jobsData, error: jobsError } = await supabase
+        .from('jobs')
+        .select(`
+            *,
+            users ( name )
+        `);
+    
+    const jobs = jobsData?.map(j => ({
+        ...j,
+        id: j.id,
+        job_id: j.job_id,
+        customer_name: j.customer_name,
+        assigned_engineer_name: (j.users as any)?.name || 'Unassigned',
+    })) || [];
+
+
+    const { data: users, error: usersError } = await supabase.from('users').select('*');
+
+    if (jobsError) console.error('Error fetching jobs:', jobsError.message);
+    if (usersError) console.error('Error fetching users:', usersError.message);
+
+    return { jobs: jobs as unknown as Job[], users: (users as User[]) || [], currentUser };
 }
 
-export async function createJobAction(newJobData: Omit<Job, 'id'>) {
+export async function createJobAction(newJobData: Omit<Job, 'id'|'job_id'>) {
     try {
-        const jobs = await getJobsData();
-        const newIdNumber = jobs.length > 0 ? Math.max(...jobs.map(j => parseInt(j.id.split('-')[1]))) + 1 : 1;
-        const newJob: Job = {
+        const { data: latestJob, error: latestJobError } = await supabaseAdmin
+            .from('jobs')
+            .select('job_id')
+            .order('id', { ascending: false })
+            .limit(1)
+            .single();
+
+        if (latestJobError && latestJobError.code !== 'PGRST116') throw latestJobError;
+
+        const newIdNumber = latestJob ? parseInt(latestJob.job_id.split('-')[1]) + 1 : 1;
+        const newJobId = `JOB-${String(newIdNumber).padStart(3, '0')}`;
+        
+        const jobToInsert = {
             ...newJobData,
-            id: `JOB-${String(newIdNumber).padStart(3, '0')}`,
+            job_id: newJobId,
+            customer_name: newJobData.customer_name,
+            job_type: newJobData.job_type,
+            assigned_engineer_id: newJobData.assigned_engineer_id,
         };
 
-        const updatedJobs = [...jobs, newJob];
-        await saveJobs(updatedJobs);
+        const { data: newJob, error } = await supabaseAdmin
+            .from('jobs')
+            .insert(jobToInsert)
+            .select()
+            .single();
 
-        // Send notification
-        const message = `*New Job Created*\n\n*ID:* ${newJob.id}\n*Customer:* ${newJob.customerName}\n*Type:* ${newJob.jobType}\n*Assigned to:* ${newJob.assignedEngineer || 'Unassigned'}`;
+        if (error) throw error;
+        
+        const { data: engineer } = await supabaseAdmin.from('users').select('name').eq('id', newJob.assigned_engineer_id).single();
+
+        const message = `*New Job Created*\n\n*ID:* ${newJob.job_id}\n*Customer:* ${newJob.customer_name}\n*Type:* ${newJob.job_type}\n*Assigned to:* ${engineer?.name || 'Unassigned'}`;
         await sendTelegramNotification(message);
 
-        revalidatePath('/');
+        revalidatePath('/jobs');
+        revalidatePath('/dashboard');
         return { success: true, job: newJob };
-    } catch (error) {
-        console.error('Failed to create job:', error);
+    } catch (error: any) {
+        console.error('Failed to create job:', error.message);
         return { success: false, error: 'Failed to create the job.' };
     }
 }
 
-export async function updateJobAction(job: Job, userRole: User['role']) {
+export async function updateJobAction(job: Job, userRole: UserRole) {
   try {
-    const jobs = await getJobsData();
     let isApprovalRequest = false;
+    let finalStatus = job.status;
 
-    if (userRole === 'Admin' || userRole === 'Senior') {
-      // Admins and Seniors can update directly
-      jobs[jobs.findIndex(j => j.id === job.id)] = job;
-    } else {
-      // Engineers request an update by changing the status
-      jobs[jobs.findIndex(j => j.id === job.id)] = { ...job, status: 'Pending Approval' };
+    if (userRole !== 'Admin' && userRole !== 'Senior') {
+      finalStatus = 'Pending Approval';
       isApprovalRequest = true;
     }
+    
+    const { error } = await supabaseAdmin
+      .from('jobs')
+      .update({
+          customer_name: job.customer_name,
+          address: job.address,
+          job_type: job.job_type,
+          status: finalStatus,
+          reason: job.reason,
+          assigned_engineer_id: job.assigned_engineer_id,
+          date: job.date,
+          equipment: job.equipment,
+          network: job.network,
+      })
+      .eq('id', job.id);
 
-    await saveJobs(jobs);
+    if (error) throw error;
 
     if (isApprovalRequest) {
-      // Send notification for pending approval
-      const message = `*Job Update Requires Approval*\n\n*ID:* ${job.id}\n*Customer:* ${job.customerName}\n*Engineer:* ${job.assignedEngineer}\n\nA job update has been submitted and requires your approval.`;
+      const { data: engineer } = await supabaseAdmin.from('users').select('name').eq('id', job.assigned_engineer_id).single();
+      const message = `*Job Update Requires Approval*\n\n*ID:* ${job.job_id}\n*Customer:* ${job.customer_name}\n*Engineer:* ${engineer?.name || 'Unknown'}\n\nA job update has been submitted and requires your approval.`;
       await sendTelegramNotification(message);
     }
     
-    revalidatePath('/');
-    return { success: true, message: `Job ${job.id} action processed successfully.` };
-  } catch (error) {
-    console.error('Failed to update job:', error);
+    revalidatePath('/jobs');
+    revalidatePath('/notifications');
+    revalidatePath('/dashboard');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Failed to update job:', error.message);
     return { success: false, error: 'Failed to save the job.' };
   }
 }
 
-
-export async function updateUserRoleAction(userId: string, newRole: User['role']) {
+export async function updateUserRoleAction(userId: string, newRole: UserRole) {
   try {
-    const users = await getUsersData();
-    const updatedUsers = users.map(user => 
-      user.id === userId ? { ...user, role: newRole } : user
-    );
-    await saveUsers(updatedUsers);
-    revalidatePath('/');
+    const { error } = await supabaseAdmin
+        .from('users')
+        .update({ role: newRole })
+        .eq('id', userId);
+    
+    if (error) throw error;
+    revalidatePath('/engineers');
     return { success: true };
-  } catch (error) {
-    console.error("Failed to update user role:", error);
+  } catch (error: any) {
+    console.error("Failed to update user role:", error.message);
     return { success: false, error: "Failed to update user role." };
   }
 }
 
 export async function deleteUserAction(userId: string) {
   try {
-    const users = await getUsersData();
-    const updatedUsers = users.filter(user => user.id !== userId);
-    await saveUsers(updatedUsers);
-    revalidatePath('/');
+    // This uses the Supabase Admin client to bypass RLS for user deletion
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    if (error) throw error;
+    
+    revalidatePath('/engineers');
     return { success: true };
-  } catch (error) {
-    console.error("Failed to delete user:", error);
+  } catch (error: any) {
+    console.error("Failed to delete user:", error.message);
     return { success: false, error: "Failed to delete user." };
   }
 }
 
-export async function deleteJobAction(jobId: string) {
+export async function deleteJobAction(jobId: number) {
     try {
-      let jobs = await getJobsData();
-      jobs = jobs.filter(job => job.id !== jobId);
-      await saveJobs(jobs);
-      revalidatePath('/');
-      return { success: true, message: `Job ${jobId} deleted successfully.` };
-    } catch (error) {
-      console.error('Failed to delete job:', error);
+      const { error } = await supabaseAdmin
+        .from('jobs')
+        .delete()
+        .eq('id', jobId);
+
+      if (error) throw error;
+      
+      revalidatePath('/jobs');
+      revalidatePath('/notifications');
+      revalidatePath('/dashboard');
+      return { success: true };
+    } catch (error: any) {
+      console.error('Failed to delete job:', error.message);
       return { success: false, error: 'Failed to delete the job.' };
     }
 }
 
-export async function registerUserAction(newUser: Omit<User, 'id'>) {
-    try {
-        const users = await getUsersData();
-
-        if (users.some(u => u.email === newUser.email)) {
-            return { success: false, error: 'User with this email already exists.' };
-        }
-
-        const newUserWithId: User = {
-            ...newUser,
-            id: `USR-00${users.length + 1}`,
-        };
-
-        const updatedUsers = [...users, newUserWithId];
-        await saveUsers(updatedUsers);
-        revalidatePath('/');
-        
-        return { success: true, user: newUserWithId };
-
-    } catch (error) {
-        console.error("Failed to register user:", error);
-        return { success: false, error: "Failed to register user." };
-    }
-}
-
-export async function getTelegramSettingsAction() {
+export async function getTelegramSettingsAction(): Promise<TelegramSettings | null> {
     return await getTelegramSettings();
 }
 
 export async function saveTelegramSettingsAction(settings: TelegramSettings) {
-    // On read-only filesystems (like Vercel/Netlify), writing files will cause an error.
-    // We'll skip writing to the file in production environments.
-    if (process.env.NODE_ENV === 'development') {
-        try {
-            const data = JSON.stringify(settings, null, 2);
-            await fs.writeFile(telegramSettingsPath, data, 'utf-8');
-            return { success: true, message: 'Telegram settings saved successfully.' };
-        } catch (error) {
-            console.error('Failed to save Telegram settings:', error);
-            return { success: false, error: 'Failed to save settings.' };
-        }
-    } else {
-        console.log('Skipping file write for telegram.json in production environment.');
-        // Return success to avoid showing an error to the user, even though it's not saved.
-        return { success: true, message: 'Settings saved for this session (not persisted in production).'};
+    try {
+        const { error } = await supabaseAdmin
+            .from('settings')
+            .upsert({ key: 'telegram', value: settings });
+
+        if (error) throw error;
+        
+        revalidatePath('/settings');
+        return { success: true };
+    } catch (error: any) {
+        console.error('Failed to save Telegram settings:', error.message);
+        return { success: false, error: 'Failed to save settings.' };
     }
 }

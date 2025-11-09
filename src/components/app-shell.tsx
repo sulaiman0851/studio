@@ -1,10 +1,10 @@
 
 'use client';
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { HardHat, Bell } from 'lucide-react';
+import { HardHat } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
-import { getInitialData } from '@/lib/actions';
 import type { Job, User } from '@/lib/types';
 import {
   Sidebar,
@@ -17,6 +17,8 @@ import { MainNav } from '@/components/main-nav';
 import { UserNav } from '@/components/user-nav';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { LoadingAnimation } from '@/components/loading-animation';
+import { getInitialData } from '@/lib/actions';
+
 
 interface AppContextType {
   jobs: Job[];
@@ -41,40 +43,45 @@ export function useAppContext() {
 function AppProvider({ children }: { children: React.ReactNode }) {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [currentUser, _setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-
-  // Custom setCurrentUser to also handle localStorage
-  const setCurrentUser = (user: User | null) => {
-    _setCurrentUser(user);
-    if (user) {
-      localStorage.setItem('currentUser', JSON.stringify(user));
-    } else {
-      localStorage.removeItem('currentUser');
-    }
-  };
+  const supabase = createClientComponentClient();
+  const router = useRouter();
 
   useEffect(() => {
     async function loadData() {
       setLoading(true);
-      const { users: fetchedUsers, jobs: fetchedJobs } = await getInitialData();
-      setUsers(fetchedUsers);
-      setJobs(fetchedJobs);
-
-      try {
-        const storedUser = localStorage.getItem('currentUser');
-        if (storedUser) {
-          _setCurrentUser(JSON.parse(storedUser));
-        }
-      } catch (error) {
-        console.error("Failed to parse user from localStorage", error);
-        localStorage.removeItem('currentUser');
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        const { users: fetchedUsers, jobs: fetchedJobs, currentUser: fetchedCurrentUser } = await getInitialData();
+        setUsers(fetchedUsers);
+        setJobs(fetchedJobs);
+        setCurrentUser(fetchedCurrentUser);
       }
-
       setLoading(false);
     }
+    
     loadData();
-  }, []);
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') {
+          loadData();
+        }
+        if (event === 'SIGNED_OUT') {
+          setCurrentUser(null);
+          setJobs([]);
+          setUsers([]);
+          router.push('/login');
+        }
+      }
+    );
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [supabase, router]);
 
   const value = { jobs, users, currentUser, setJobs, setUsers, loading, setCurrentUser };
 
@@ -100,24 +107,19 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
       if (!loading && !currentUser && !isAuthPage) {
         router.push('/login');
       }
-      if (!loading && currentUser && isAuthPage) {
-        router.push('/dashboard');
-      }
-    }, [loading, currentUser, isAuthPage, router, pathname]);
+      // No redirect from auth page if logged in, handled by auth pages themselves
+    }, [loading, currentUser, isAuthPage, router]);
+    
 
-    if (loading) {
-        return <LoadingAnimation />;
-    }
-
-    if (!currentUser && !isAuthPage) {
+    if (loading && !isAuthPage) {
         return <LoadingAnimation />;
     }
     
-    if(isAuthPage && !currentUser) {
+    if (isAuthPage) {
         return <>{children}</>;
     }
-
-    if (isAuthPage && currentUser) {
+    
+    if (!currentUser) {
         return <LoadingAnimation />;
     }
 

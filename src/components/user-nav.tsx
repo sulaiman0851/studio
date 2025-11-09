@@ -14,28 +14,37 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
-import { useAppContext } from "./app-shell";
 import { useRouter } from "next/navigation";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { toast } from "@/hooks/use-toast";
 
 interface UserNavProps {
   user: User;
 }
 
 export function UserNav({ user }: UserNavProps) {
-  const { setCurrentUser } = useAppContext();
   const router = useRouter();
+  const supabase = createClientComponentClient();
 
   const getInitials = (name: string) => {
     const names = name.split(' ');
     if (names.length > 1) {
       return names[0][0] + names[names.length - 1][0];
     }
-    return names[0].substring(0, 2);
+    return name.substring(0, 2);
   };
 
-  const handleLogout = () => {
-    setCurrentUser(null);
-    router.push('/login');
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Logout Failed",
+        description: error.message,
+      });
+    } else {
+      router.push('/login');
+    }
   };
 
   return (

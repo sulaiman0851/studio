@@ -24,20 +24,20 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { Job, User } from "@/lib/types";
+import type { Job, User, UserRole } from "@/lib/types";
 import { JobFormSheet } from "./job-form-sheet";
 import { JobDetailsDialog } from "./job-details-dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { PlusCircle } from "lucide-react";
 
-interface DataTableProps<TData, TValue> {
+interface DataTableProps<TData extends Job, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   currentUser: User;
   users: User[];
-  onUpdateJob: (job: Job) => Promise<boolean>;
-  onCreateJob: (job: Job) => Promise<boolean>;
-  onDeleteJob: (jobId: string) => Promise<void>;
+  onUpdateJob: (job: Job, userRole: UserRole) => Promise<boolean>;
+  onCreateJob: (job: Omit<Job, 'id' | 'job_id'>) => Promise<boolean>;
+  onDeleteJob: (jobId: number) => Promise<void>;
 }
 
 export function JobsDataTable<TData extends Job, TValue>({
@@ -78,6 +78,12 @@ export function JobsDataTable<TData extends Job, TValue>({
       sorting,
       columnFilters,
     },
+    initialState: {
+        columnVisibility: {
+            // Hide the raw 'id' column, we use 'job_id' for display
+            id: false, 
+        }
+    }
   });
 
   const handleDelete = async () => {
@@ -87,11 +93,13 @@ export function JobsDataTable<TData extends Job, TValue>({
     }
   };
   
-  const handleSave = (jobData: Job) => {
+  const handleSave = (jobData: any) => {
     if (editingJob) {
-      return onUpdateJob(jobData);
+      // It's an update
+      return onUpdateJob(jobData as Job, currentUser.role);
     }
-    return onCreateJob(jobData);
+    // It's a creation
+    return onCreateJob(jobData as Omit<Job, 'id' | 'job_id'>);
   }
 
   const handleOpenCreate = () => {
@@ -113,9 +121,9 @@ export function JobsDataTable<TData extends Job, TValue>({
         <div className="flex items-center justify-between py-4">
             <Input
             placeholder="Filter by customer..."
-            value={(table.getColumn("customerName")?.getFilterValue() as string) ?? ""}
+            value={(table.getColumn("customer_name")?.getFilterValue() as string) ?? ""}
             onChange={(event) =>
-                table.getColumn("customerName")?.setFilterValue(event.target.value)
+                table.getColumn("customer_name")?.setFilterValue(event.target.value)
             }
             className="max-w-sm"
             />
@@ -200,6 +208,7 @@ export function JobsDataTable<TData extends Job, TValue>({
             isOpen={!!viewingJob}
             onOpenChange={(open) => !open && setViewingJob(null)}
             job={viewingJob}
+            users={users}
         />
 
         <AlertDialog open={!!jobToDelete} onOpenChange={(open) => !open && setJobToDelete(null)}>
@@ -207,7 +216,7 @@ export function JobsDataTable<TData extends Job, TValue>({
                 <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure you want to delete this job?</AlertDialogTitle>
                 <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete the job for <span className="font-semibold">{jobToDelete?.customerName}</span>.
+                    This action cannot be undone. This will permanently delete job <span className="font-semibold">{jobToDelete?.job_id}</span> for <span className="font-semibold">{jobToDelete?.customer_name}</span>.
                 </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

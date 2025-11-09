@@ -4,7 +4,7 @@
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import type { Job, JobType, JobStatus, User } from "@/lib/types";
+import type { Job, JobType, JobStatus, User, UserRole } from "@/lib/types";
 import React from "react";
 
 import { Button } from "@/components/ui/button";
@@ -44,13 +44,14 @@ import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Loader2 } from "lucide-react";
 
 const jobSchema = z.object({
-  id: z.string().optional(),
-  customerName: z.string().min(2, "Customer name is required."),
+  id: z.number().optional(),
+  job_id: z.string().optional(),
+  customer_name: z.string().min(2, "Customer name is required."),
   address: z.string().min(5, "Address is required."),
-  jobType: z.string({ required_error: "Please select a job type."}),
+  job_type: z.string({ required_error: "Please select a job type."}),
   status: z.string(),
   reason: z.string().min(10, "Reason must be at least 10 characters."),
-  assignedEngineer: z.string({ required_error: "Please assign an engineer."}),
+  assigned_engineer_id: z.string({ required_error: "Please assign an engineer."}).nullable(),
   date: z.string(),
   equipment: z.object({
     type: z.enum(["Modem", "ONT"], { required_error: "Please select equipment type."}),
@@ -79,16 +80,17 @@ interface JobFormSheetProps {
   job: Job | null;
   user: User;
   users: User[];
-  onSave: (job: Job, userRole: User['role']) => Promise<boolean>;
+  onSave: (data: any) => Promise<boolean>;
 }
 
 const getFreshJob = (currentUser: User): Partial<Job> => ({
-    customerName: '',
+    customer_name: '',
     address: '',
     reason: '',
-    assignedEngineer: currentUser.role === 'Engineer' ? currentUser.name : '',
+    assigned_engineer_id: currentUser.role === 'Engineer' ? currentUser.id : null,
     status: 'Pending',
     date: new Date().toISOString(),
+    job_type: 'Installation',
     equipment: {
         type: 'ONT',
         serialNumber: '',
@@ -107,7 +109,7 @@ export function JobFormSheet({ isOpen, onOpenChange, job, user, users, onSave }:
   const [isSaving, setIsSaving] = React.useState(false);
   const isEditing = !!job;
   
-  const form = useForm<Job>({
+  const form = useForm<z.infer<typeof jobSchema>>({
     resolver: zodResolver(jobSchema),
     defaultValues: isEditing ? job : getFreshJob(user),
   });
@@ -122,9 +124,13 @@ export function JobFormSheet({ isOpen, onOpenChange, job, user, users, onSave }:
   const isApproving = isPrivilegedUser && job?.status === 'Pending Approval';
   const engineers = (users || []).filter(u => u.role === 'Engineer' || u.role === 'Senior');
 
-  async function onSubmit(data: Job) {
+  async function onSubmit(data: z.infer<typeof jobSchema>) {
     setIsSaving(true);
-    const success = await onSave(data, user.role);
+    
+    // The onSave prop expects different types for create vs update
+    const payload = isEditing ? { ...job, ...data } : data;
+
+    const success = await onSave(payload);
     setIsSaving(false);
 
     if (success) {
@@ -133,24 +139,24 @@ export function JobFormSheet({ isOpen, onOpenChange, job, user, users, onSave }:
         if (!isPrivilegedUser) {
             toastMessage = {
             title: "Update Requested",
-            description: `Request to update job ${data.id} has been sent for approval.`,
+            description: `Request to update job ${data.job_id} has been sent for approval.`,
             };
         } else if (isApproving) {
             toastMessage = {
             title: "Job Approved",
-            description: `Job ${data.id} has been updated and approved.`,
+            description: `Job ${data.job_id} has been updated and approved.`,
             };
         }
         else {
             toastMessage = {
             title: "Job Updated",
-            description: `Job ${data.id} for ${data.customerName} has been saved.`,
+            description: `Job ${data.job_id} for ${data.customer_name} has been saved.`,
             };
         }
       } else {
          toastMessage = {
             title: "Job Created",
-            description: `New job for ${data.customerName} has been successfully created.`,
+            description: `New job for ${data.customer_name} has been successfully created.`,
          };
       }
       toast(toastMessage);
@@ -186,11 +192,11 @@ export function JobFormSheet({ isOpen, onOpenChange, job, user, users, onSave }:
   };
   
   const sheetTitle = isEditing 
-    ? (isApproving ? 'Approve Job Update:' : 'Edit Job:') + ` ${job?.id || ''}`
+    ? (isApproving ? 'Approve Job Update:' : 'Edit Job:') + ` ${job?.job_id || ''}`
     : 'Create a New Job';
   
   const sheetDescription = isEditing
-    ? (isApproving ? `Review and approve changes for job assigned to ${job?.customerName}.` : `Update the details for the job assigned to ${job?.customerName}.`)
+    ? (isApproving ? `Review and approve changes for job assigned to ${job?.customer_name}.` : `Update the details for the job assigned to ${job?.customer_name}.`)
     : 'Fill in the details below to create a new job entry.';
 
 
@@ -209,7 +215,7 @@ export function JobFormSheet({ isOpen, onOpenChange, job, user, users, onSave }:
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name="customerName"
+                    name="customer_name"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Customer Name</FormLabel>
@@ -235,7 +241,7 @@ export function JobFormSheet({ isOpen, onOpenChange, job, user, users, onSave }:
                   />
                   <FormField
                     control={form.control}
-                    name="jobType"
+                    name="job_type"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Job Type</FormLabel>
@@ -255,18 +261,18 @@ export function JobFormSheet({ isOpen, onOpenChange, job, user, users, onSave }:
                   />
                    <FormField
                     control={form.control}
-                    name="assignedEngineer"
+                    name="assigned_engineer_id"
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>Assigned Engineer</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!isPrivilegedUser && user.role === 'Engineer'}>
+                        <Select onValueChange={field.onChange} defaultValue={field.value || ""} disabled={!isPrivilegedUser && user.role === 'Engineer'}>
                             <FormControl>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select an engineer" />
                             </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                                {engineers.map(e => <SelectItem key={e.id} value={e.name}>{e.name}</SelectItem>)}
+                                {engineers.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
                             </SelectContent>
                         </Select>
                         <FormMessage />
@@ -362,7 +368,7 @@ export function JobFormSheet({ isOpen, onOpenChange, job, user, users, onSave }:
                       <FormItem>
                         <FormLabel>PPPoE Username</FormLabel>
                         <FormControl>
-                          <Input placeholder="user@isp.com" {...field} />
+                          <Input placeholder="user@isp.com" {...field} value={field.value || ''} />
                         </FormControl>
                       </FormItem>
                     )}
@@ -374,7 +380,7 @@ export function JobFormSheet({ isOpen, onOpenChange, job, user, users, onSave }:
                       <FormItem>
                         <FormLabel>PPPoE Password</FormLabel>
                         <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} />
+                          <Input type="password" placeholder="••••••••" {...field} value={field.value || ''} />
                         </FormControl>
                       </FormItem>
                     )}
@@ -386,7 +392,7 @@ export function JobFormSheet({ isOpen, onOpenChange, job, user, users, onSave }:
                       <FormItem>
                         <FormLabel>New SSID</FormLabel>
                         <FormControl>
-                          <Input placeholder="Customer_WiFi" {...field} />
+                          <Input placeholder="Customer_WiFi" {...field} value={field.value || ''} />
                         </FormControl>
                       </FormItem>
                     )}
@@ -398,7 +404,7 @@ export function JobFormSheet({ isOpen, onOpenChange, job, user, users, onSave }:
                       <FormItem>
                         <FormLabel>WLAN Key</FormLabel>
                         <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} />
+                          <Input type="password" placeholder="••••••••" {...field} value={field.value || ''} />
                         </FormControl>
                       </FormItem>
                     )}

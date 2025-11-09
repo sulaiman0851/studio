@@ -6,7 +6,7 @@ import { JobsDataTable } from '@/components/jobs/data-table';
 import { jobsColumns } from '@/components/jobs/columns';
 import { updateJobAction, deleteJobAction } from '@/lib/actions';
 import { toast } from '@/hooks/use-toast';
-import type { Job, User } from '@/lib/types';
+import type { Job, User, UserRole } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BellRing } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -26,9 +26,9 @@ function NotificationContent({
   jobs: Job[];
   currentUser: User;
   users: User[];
-  onUpdateJob: (job: Job, userRole: User['role']) => Promise<boolean>;
-  onDeleteJob: (jobId: string) => Promise<void>;
-  onCreateJob: (job: Job) => Promise<boolean>;
+  onUpdateJob: (job: Job, userRole: UserRole) => Promise<boolean>;
+  onDeleteJob: (jobId: number) => Promise<void>;
+  onCreateJob: (job: Omit<Job, 'id' | 'job_id'>) => Promise<boolean>;
 }) {
   if (jobs.length === 0) {
     return (
@@ -77,21 +77,23 @@ export default function NotificationsPage() {
   
   const newJobs = isPrivilegedUser 
     ? jobs.filter(job => job.status === 'Pending')
-    : jobs.filter(job => job.status === 'Pending' && job.assignedEngineer === currentUser.name);
+    : jobs.filter(job => job.status === 'Pending' && job.assigned_engineer_id === currentUser.id);
 
-  const handleUpdateJob = async (updatedJob: Job, userRole: User['role']) => {
+  const handleUpdateJob = async (updatedJob: Job, userRole: UserRole) => {
     const isApproving = updatedJob.status === 'Pending Approval' && isPrivilegedUser;
     const result = await updateJobAction(updatedJob, userRole);
     
     if (result.success) {
-      // For approvals, we might want to set status to 'In Progress' or something else
-      const finalJobState = isApproving ? { ...updatedJob, status: 'In Progress' } : updatedJob;
+      const engineer = users.find(u => u.id === updatedJob.assigned_engineer_id);
+      const finalJobState = isApproving
+        ? { ...updatedJob, status: 'In Progress', assigned_engineer_name: engineer?.name || 'Unassigned' }
+        : { ...updatedJob, assigned_engineer_name: engineer?.name || 'Unassigned' };
 
       setJobs(prevJobs => prevJobs.map(job => (job.id === updatedJob.id ? finalJobState : job)));
 
       toast({
         title: isApproving ? "Job Approved" : "Job Updated",
-        description: `Job ${updatedJob.id} has been successfully updated.`,
+        description: `Job ${updatedJob.job_id} has been successfully updated.`,
       });
       return true;
     } else {
@@ -104,13 +106,16 @@ export default function NotificationsPage() {
     }
   };
 
-  const handleDeleteJob = async (jobId: string) => {
+  const handleDeleteJob = async (jobId: number) => {
+    const jobToDelete = jobs.find(j => j.id === jobId);
+    if (!jobToDelete) return;
+    
     const result = await deleteJobAction(jobId);
     if (result.success) {
       setJobs(prevJobs => prevJobs.filter(job => job.id !== jobId));
       toast({
         title: "Job Deleted",
-        description: `Job ${jobId} has been deleted.`,
+        description: `Job ${jobToDelete.job_id} has been deleted.`,
       });
     } else {
       toast({
@@ -120,24 +125,15 @@ export default function NotificationsPage() {
       });
     }
   };
-
-  const handleCreateJob = async (newJobData: Job) => {
-    const result = await updateJobAction(newJobData, currentUser.role); // Using update action as a placeholder
-    if (result.success) {
-      setJobs(prevJobs => [...prevJobs, newJobData]);
-      toast({
-        title: 'Job Created',
-        description: `New job for ${newJobData.customerName} has been created.`,
-      });
-      return true;
-    } else {
-      toast({
+  
+  // This is a placeholder as onCreateJob is not directly used on this page
+  const handleCreateJob = async (newJobData: Omit<Job, 'id'|'job_id'>) => {
+    toast({
         variant: 'destructive',
-        title: 'Creation Failed',
-        description: result.error || 'Could not create the job.',
-      });
-      return false;
-    }
+        title: 'Not Implemented',
+        description: 'Creating jobs from this page is not supported.',
+    });
+    return false;
   };
 
 
@@ -145,9 +141,9 @@ export default function NotificationsPage() {
 
   return (
     <Tabs defaultValue={defaultTab} className="w-full">
-      <TabsList className="grid w-full grid-cols-2">
+      <TabsList className={`grid w-full ${isPrivilegedUser ? 'grid-cols-2' : 'grid-cols-1'}`}>
         {isPrivilegedUser && <TabsTrigger value="approvals">Pending Approval</TabsTrigger>}
-        <TabsTrigger value="new-jobs" className={!isPrivilegedUser ? 'col-span-2' : ''}>New Jobs</TabsTrigger>
+        <TabsTrigger value="new-jobs">New Jobs</TabsTrigger>
       </TabsList>
       
       {isPrivilegedUser && (

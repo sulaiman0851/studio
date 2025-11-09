@@ -2,7 +2,7 @@
 'use client';
 
 import Image from 'next/image';
-import type { Job } from '@/lib/types';
+import type { Job, User } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
@@ -19,6 +19,7 @@ interface JobDetailsDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   job: Job | null;
+  users: User[];
 }
 
 const DetailItem = ({ label, value }: { label: string; value?: string | null }) => (
@@ -28,7 +29,7 @@ const DetailItem = ({ label, value }: { label: string; value?: string | null }) 
   </div>
 );
 
-export function JobDetailsDialog({ isOpen, onOpenChange, job }: JobDetailsDialogProps) {
+export function JobDetailsDialog({ isOpen, onOpenChange, job, users }: JobDetailsDialogProps) {
   if (!job) return null;
   
   const statusVariantMap: Record<Job['status'], "default" | "secondary" | "destructive" | "outline"> = {
@@ -36,15 +37,18 @@ export function JobDetailsDialog({ isOpen, onOpenChange, job }: JobDetailsDialog
     "In Progress": "secondary",
     Pending: "outline",
     Cancelled: "destructive",
+    "Pending Approval": "default"
   };
+
+  const assignedEngineer = users.find(u => u.id === job.assigned_engineer_id);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Job Details: {job.id}</DialogTitle>
+          <DialogTitle>Job Details: {job.job_id}</DialogTitle>
           <DialogDescription>
-            Viewing details for the job assigned to {job.customerName}.
+            Viewing details for the job assigned to {job.customer_name}.
           </DialogDescription>
         </DialogHeader>
         <ScrollArea className="max-h-[70vh] pr-6">
@@ -52,10 +56,10 @@ export function JobDetailsDialog({ isOpen, onOpenChange, job }: JobDetailsDialog
             <div className="space-y-4">
               <h4 className="text-lg font-semibold">Job Information</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <DetailItem label="Customer Name" value={job.customerName} />
+                <DetailItem label="Customer Name" value={job.customer_name} />
                 <DetailItem label="Address" value={job.address} />
-                <DetailItem label="Job Type" value={job.jobType} />
-                <DetailItem label="Assigned Engineer" value={job.assignedEngineer} />
+                <DetailItem label="Job Type" value={job.job_type} />
+                <DetailItem label="Assigned Engineer" value={assignedEngineer?.name || 'Unassigned'} />
                 <DetailItem label="Date" value={new Date(job.date).toLocaleDateString()} />
                 <div>
                     <p className="text-sm font-medium text-muted-foreground">Status</p>

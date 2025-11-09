@@ -18,11 +18,11 @@ const statusVariantMap: Record<JobStatus, "default" | "secondary" | "destructive
 
 export const jobsColumns: ColumnDef<Job>[] = [
   {
-    accessorKey: "id",
+    accessorKey: "job_id",
     header: "Job ID",
   },
   {
-    accessorKey: "customerName",
+    accessorKey: "customer_name",
     header: ({ column }) => {
       return (
         <Button
@@ -36,7 +36,7 @@ export const jobsColumns: ColumnDef<Job>[] = [
     },
   },
   {
-    accessorKey: "jobType",
+    accessorKey: "job_type",
     header: "Job Type",
     filterFn: (row, id, value) => {
         return value.includes(row.getValue(id));

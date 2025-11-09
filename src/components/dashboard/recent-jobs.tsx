@@ -34,12 +34,12 @@ export function RecentJobs({ jobs }: RecentJobsProps) {
       {todayJobs.map(job => (
         <div className="flex items-center" key={job.id}>
             <Avatar className="h-9 w-9">
-              <AvatarImage src={`https://i.pravatar.cc/150?u=${job.assignedEngineer.replace(/\s/g, '')}`} alt="Avatar" />
-              <AvatarFallback>{getInitials(job.assignedEngineer)}</AvatarFallback>
+              <AvatarImage src={`https://i.pravatar.cc/150?u=${job.assigned_engineer_name?.replace(/\s/g, '')}`} alt="Avatar" />
+              <AvatarFallback>{getInitials(job.assigned_engineer_name || 'N/A')}</AvatarFallback>
             </Avatar>
             <div className="ml-4 space-y-1">
-                <p className="text-sm font-medium leading-none">{job.assignedEngineer}</p>
-                <p className="text-sm text-muted-foreground">{job.customerName}</p>
+                <p className="text-sm font-medium leading-none">{job.assigned_engineer_name}</p>
+                <p className="text-sm text-muted-foreground">{job.customer_name}</p>
             </div>
         </div>
       ))}

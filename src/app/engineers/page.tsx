@@ -37,13 +37,12 @@ const roleVariantMap: Record<User['role'], 'default' | 'secondary' | 'outline'> 
 };
 
 function EngineerList({ users }: { users: User[] }) {
-  // Menampilkan semua pengguna, tidak hanya engineer dan senior
   const allUsers = users;
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Engineer List</CardTitle>
+        <CardTitle>User List</CardTitle>
         <CardDescription>
           A list of all users on the platform.
         </CardDescription>

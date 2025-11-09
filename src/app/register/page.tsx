@@ -8,6 +8,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -21,10 +22,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
-import { useAppContext } from '@/components/app-shell';
 import { Loader2, HardHat } from 'lucide-react';
-import type { User } from '@/lib/types';
-import { registerUserAction } from '@/lib/actions';
 
 const registerSchema = z.object({
     name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
@@ -43,7 +41,17 @@ export default function RegisterPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [currentBgIndex, setCurrentBgIndex] = useState(0);
     const router = useRouter();
-    const { setCurrentUser, setUsers } = useAppContext();
+    const supabase = createClientComponentClient();
+    
+    useEffect(() => {
+        const checkUser = async () => {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            router.push('/dashboard');
+          }
+        };
+        checkUser();
+    }, [router, supabase.auth]);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -65,29 +73,30 @@ export default function RegisterPage() {
   async function onSubmit(values: z.infer<typeof registerSchema>) {
     setIsLoading(true);
 
-    const newUser: Omit<User, 'id'> = {
-        name: values.name,
-        email: values.email,
-        role: 'Engineer', // Default role for new users
-        avatar: `https://i.pravatar.cc/150?u=${values.email}`
-    };
-
-    const result = await registerUserAction(newUser);
+    const { error } = await supabase.auth.signUp({
+      email: values.email,
+      password: values.password,
+      options: {
+        data: {
+          name: values.name,
+          avatar: `https://i.pravatar.cc/150?u=${values.email}`
+        },
+      },
+    });
     
-    if (result.success && result.user) {
-        setUsers(prevUsers => [...prevUsers, result.user!]);
-        setCurrentUser(result.user);
-        toast({
-            title: 'Registration Successful',
-            description: 'Your account has been created.',
-        });
-        router.push('/dashboard');
-    } else {
+    if (error) {
         toast({
             variant: 'destructive',
             title: 'Registration Failed',
-            description: result.error || 'An unexpected error occurred.',
+            description: error.message || 'An unexpected error occurred.',
         });
+        setIsLoading(false);
+    } else {
+        toast({
+            title: 'Registration Successful',
+            description: 'Please check your email to verify your account.',
+        });
+        router.push('/login');
         setIsLoading(false);
     }
   }
