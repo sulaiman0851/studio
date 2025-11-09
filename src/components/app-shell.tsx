@@ -1,7 +1,7 @@
 
 'use client';
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { HardHat } from 'lucide-react';
+import { HardHat, AlertTriangle } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
@@ -18,6 +18,7 @@ import { UserNav } from '@/components/user-nav';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { LoadingAnimation } from '@/components/loading-animation';
 import { getInitialData } from '@/lib/actions';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 
 
 interface AppContextType {
@@ -40,13 +41,43 @@ export function useAppContext() {
   return context;
 }
 
+function EnvVarsWarning() {
+    return (
+        <div className="flex h-screen w-full items-center justify-center bg-background p-4">
+            <Card className="max-w-lg border-destructive">
+                <CardHeader className="text-center">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
+                        <AlertTriangle className="h-6 w-6 text-destructive" />
+                    </div>
+                    <CardTitle className="mt-4 text-destructive">Configuration Error</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <CardDescription className="text-center text-base">
+                        Supabase environment variables are missing. The application cannot connect to the database.
+                        <br/><br/>
+                        Please add <code className="bg-muted px-1 py-0.5 rounded-sm">NEXT_PUBLIC_SUPABASE_URL</code> and <code className="bg-muted px-1 py-0.5 rounded-sm">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> to your project's environment variables in your hosting provider's dashboard (e.g., Vercel, Netlify).
+                    </CardDescription>
+                </CardContent>
+            </Card>
+        </div>
+    )
+}
+
 function AppProvider({ children }: { children: React.ReactNode }) {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = createClientComponentClient();
   const router = useRouter();
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+      return <EnvVarsWarning />;
+  }
+
+  const supabase = createClientComponentClient();
 
   useEffect(() => {
     async function loadData() {

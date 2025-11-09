@@ -9,9 +9,20 @@ export async function middleware(request: NextRequest) {
     },
   })
 
+  // Check if Supabase environment variables are available
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    // If variables are not set, bypass Supabase logic to avoid crashing.
+    // The app will show a warning at the component level (AppShell).
+    console.warn("Supabase environment variables are not set. Middleware is bypassing Supabase client creation.");
+    return response;
+  }
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
         get(name: string) {
