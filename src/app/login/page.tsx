@@ -40,6 +40,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [currentBgIndex, setCurrentBgIndex] = useState(0);
   const supabase = createClientComponentClient();
+  const router = useRouter();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -76,8 +77,9 @@ export default function LoginPage() {
         title: 'Login Successful',
         description: `Welcome back!`,
       });
-      // The onAuthStateChange listener in app-shell will handle the redirect.
-      // No need to setIsLoading(false) as a redirect is about to happen.
+      // Explicitly redirect to the dashboard.
+      // AppShell will handle showing the loader while data is fetched.
+      router.push('/dashboard');
     }
   }
 
