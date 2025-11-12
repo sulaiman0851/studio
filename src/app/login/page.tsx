@@ -147,8 +147,8 @@ export default function LoginPage() {
 
                 <div className="mt-6 text-center text-sm">
                 Belum punya akun?{' '}
-                <Link href="/buatakun" className="font-medium text-primary hover:underline">
-                    Buat akun
+                <Link href="/register" className="font-medium text-primary hover:underline">
+                    Sign Up
                 </Link>
                 </div>
             </CardContent>
