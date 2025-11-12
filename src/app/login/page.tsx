@@ -32,7 +32,7 @@ const loginSchema = z.object({
 const backgroundImages = [
     { url: 'https://images.unsplash.com/photo-1581092921441-2b6748c1c926?q=80&w=2070&auto=format&fit=crop', hint: 'technician working' },
     { url: 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?q=80&w=2070&auto=format&fit=crop', hint: 'team meeting' },
-    { url: 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?q=80&w=2069&auto-format&fit=crop', hint: 'fiber optic' },
+    { url: 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?q=80&w=2069&auto=format&fit=crop', hint: 'fiber optic' },
     { url: 'https://images.unsplash.com/photo-1579208570378-8c950d67d26a?q=80&w=2070&auto=format&fit=crop', hint: 'server room' }
 ];
 
