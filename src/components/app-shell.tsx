@@ -126,9 +126,11 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
     const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/buatakun';
 
     useEffect(() => {
-        // This effect handles redirection logic. It runs whenever the loading state or currentUser changes.
-        // It's the single source of truth for routing decisions post-authentication.
-        if (loading) return; // Do nothing while the auth state is being determined.
+        // This effect handles redirection logic. It's the single source of truth.
+        // It runs whenever the loading state or currentUser changes.
+        if (loading) {
+            return; // Do nothing while the auth state is being determined.
+        }
 
         if (!currentUser && !isAuthPage) {
             // If we are done loading, there's no user, and we're not on an auth page,
@@ -139,16 +141,18 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
             // redirect to the main dashboard.
             router.push('/dashboard');
         }
-    }, [loading, currentUser, isAuthPage, router, pathname]);
+    }, [loading, currentUser, isAuthPage, router]);
     
 
-    // While loading, show a loading animation, unless we are on an auth page.
-    // On auth pages, we show the form immediately for a better user experience.
+    // While loading, show a full-screen loading animation, UNLESS we are on an auth page.
+    // On auth pages, we want to show the form immediately for a better user experience,
+    // even while the initial auth state is being checked in the background.
     if (loading && !isAuthPage) {
         return <LoadingAnimation />;
     }
     
-    // If not authenticated and on an auth page, show the auth page content.
+    // If not authenticated and we are on an auth page, show the auth page content.
+    // This allows the login/register pages to be rendered.
     if (!currentUser && isAuthPage) {
         return <>{children}</>;
     }
@@ -196,7 +200,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
         )
     }
 
-    // In all other cases (e.g. initial load, during redirects), show a loading screen.
-    // This is especially important for the brief moment after `router.refresh()` is called.
+    // In all other cases (e.g. the very initial load, or during redirects), show a loading screen.
+    // This is the fallback state that prevents the app from showing a blank page or incorrect UI.
     return <LoadingAnimation />;
 }
