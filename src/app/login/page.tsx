@@ -33,7 +33,11 @@ const backgroundImages = [
     { url: 'https://images.unsplash.com/photo-1587573429392-3875dc93e483?q=80&w=2070&auto=format&fit=crop', hint: 'fiber optic' },
     { url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=2070&auto=format&fit=crop', hint: 'engineer working' },
     { url: 'https://images.unsplash.com/photo-1526628953301-3e589a6a8b74?q=80&w=2090&auto=format&fit=crop', hint: 'wifi router' },
-    { url: 'https://images.unsplash.com/photo-1558001019-3429b1c78b53?q=80&w=2070&auto=format&fit=crop', hint: 'olt server' }
+    { url: 'https://images.unsplash.com/photo-1558001019-3429b1c78b53?q=80&w=2070&auto=format&fit=crop', hint: 'olt server' },
+    { url: 'https://images.unsplash.com/photo-1614995133370-134299b6f49f?q=80&w=2070&auto=format&fit=crop', hint: 'fiber installation' },
+    { url: 'https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?q=80&w=2070&auto=format&fit=crop', hint: 'engineer tech' },
+    { url: 'https://images.unsplash.com/photo-1611078489935-0cb964de46d6?q=80&w=1974&auto=format&fit=crop', hint: 'wifi connection' },
+    { url: 'https://images.unsplash.com/photo-1590859947231-3c583344db6f?q=80&w=2070&auto=format&fit=crop', hint: 'server room' }
 ];
 
 export default function LoginPage() {
