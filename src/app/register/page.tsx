@@ -31,10 +31,10 @@ const registerSchema = z.object({
 });
 
 const backgroundImages = [
-    { url: 'https://images.unsplash.com/photo-1581092921441-2b6748c1c926?q=80&w=2070&auto=format&fit=crop', hint: 'technician working' },
-    { url: 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?q=80&w=2070&auto=format&fit=crop', hint: 'team meeting' },
-    { url: 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?q=80&w=2069&auto-format&fit=crop', hint: 'fiber optic' },
-    { url: 'https://images.unsplash.com/photo-1579208570378-8c950d67d26a?q=80&w=2070&auto=format&fit=crop', hint: 'server room' }
+    { url: 'https://images.unsplash.com/photo-1587573429392-3875dc93e483?q=80&w=2070&auto=format&fit=crop', hint: 'fiber optic' },
+    { url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=2070&auto=format&fit=crop', hint: 'engineer working' },
+    { url: 'https://images.unsplash.com/photo-1526628953301-3e589a6a8b74?q=80&w=2090&auto=format&fit=crop', hint: 'wifi router' },
+    { url: 'https://images.unsplash.com/photo-1558001019-3429b1c78b53?q=80&w=2070&auto=format&fit=crop', hint: 'olt server' }
 ];
 
 export default function RegisterPage() {
@@ -84,7 +84,7 @@ export default function RegisterPage() {
     } else {
         toast({
             title: 'Pendaftaran Berhasil',
-            description: 'Akun Anda telah dibuat. Silakan login.',
+            description: 'Akun Anda telah dibuat. Silakan periksa email Anda untuk konfirmasi.',
         });
         router.push('/login');
     }
