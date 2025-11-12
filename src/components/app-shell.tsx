@@ -126,17 +126,17 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
     const isAuthPage = pathname === '/login' || pathname === '/register';
 
     useEffect(() => {
-        // Wait until loading is complete before doing any redirection
-        if (loading) return;
+        // This effect handles redirection logic. It runs whenever the loading state or currentUser changes.
+        // It's the single source of truth for routing decisions post-authentication.
+        if (loading) return; // Do nothing while the auth state is being determined.
 
-        // If we are done loading and there's no user,
-        // and we are NOT on an auth page, redirect to login.
         if (!currentUser && !isAuthPage) {
+            // If we are done loading, there's no user, and we're not on an auth page,
+            // redirect to the login page.
             router.push('/login');
-        } 
-        // If we are done loading and there IS a user,
-        // and we ARE on an auth page, redirect to the dashboard.
-        else if (currentUser && isAuthPage) {
+        } else if (currentUser && isAuthPage) {
+            // If we are done loading, there IS a user, and we are somehow still on an auth page,
+            // redirect to the main dashboard.
             router.push('/dashboard');
         }
     }, [loading, currentUser, isAuthPage, router]);
