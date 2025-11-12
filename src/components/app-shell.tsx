@@ -68,7 +68,6 @@ function AppProvider({ children }: { children: React.ReactNode }) {
   const [users, setUsers] = useState<User[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -81,7 +80,6 @@ function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     async function loadData(session: Session | null) {
-        setLoading(true);
         if (session) {
             const { users: fetchedUsers, jobs: fetchedJobs, currentUser: fetchedCurrentUser } = await getInitialData();
             setUsers(fetchedUsers);
@@ -97,21 +95,15 @@ function AppProvider({ children }: { children: React.ReactNode }) {
     
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        if (session) {
-            loadData(session);
-        } else {
-            loadData(null);
-        }
-        if(event === 'SIGNED_OUT') {
-            router.push('/login');
-        }
+        setLoading(true);
+        loadData(session);
       }
     );
 
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [supabase, router]);
+  }, [supabase]);
 
   const value = { jobs, users, currentUser, setJobs, setUsers, loading, setCurrentUser };
 
@@ -134,7 +126,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
     const isAuthPage = pathname === '/login' || pathname === '/register';
 
     useEffect(() => {
-        if (loading) return;
+        if (loading) return; // Wait until loading is complete
 
         if (!currentUser && !isAuthPage) {
             router.push('/login');
@@ -144,66 +136,61 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
     }, [loading, currentUser, isAuthPage, router, pathname]);
     
 
+    // While loading, show a loading animation, except on auth pages
+    // On auth pages, we want to show the form even while checking session
     if (loading && !isAuthPage) {
         return <LoadingAnimation />;
     }
     
-    if (isAuthPage) {
-        // Show loading animation on auth pages if we are still checking the session
-        // but allow rendering the page if the user is not logged in.
-        if (loading) return <LoadingAnimation />;
-        if (!currentUser) return <>{children}</>;
-        // If user is loaded and on auth page, the useEffect above will redirect them.
-        // Show loading anim in the meantime.
-        return <LoadingAnimation />;
+    // If we are on an auth page, and loading is done, but there is no user
+    // then render the auth page (login/register form)
+    if (!loading && isAuthPage && !currentUser) {
+        return <>{children}</>;
     }
     
-    if (!currentUser && !isAuthPage) {
-        return <LoadingAnimation />;
-    }
+    // If we are not on an auth page and there is a user, render the main app
+    if (!isAuthPage && currentUser) {
+        const getPageTitle = () => {
+            if (pathname.startsWith('/dashboard')) return 'Dashboard';
+            const segment = pathname.split('/').pop();
+            if (!segment) return 'Dashboard';
+            return segment.charAt(0).toUpperCase() + segment.slice(1);
+        }
     
-    if(!currentUser) {
-        return <LoadingAnimation />;
+        return (
+            <>
+                <Sidebar>
+                    <SidebarHeader className="p-4">
+                    <div className="flex items-center gap-2">
+                        <HardHat className="h-8 w-8 text-primary" />
+                        <span className="font-semibold text-xl">FieldOps</span>
+                    </div>
+                    </SidebarHeader>
+                    <SidebarContent>
+                    {currentUser && <MainNav role={currentUser.role} />}
+                    </SidebarContent>
+                </Sidebar>
+
+                <SidebarInset>
+                    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
+                    <SidebarTrigger className="sm:hidden" />
+                    <div className="flex-1">
+                        <h1 className="font-semibold text-lg capitalize">{getPageTitle()}</h1>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <ThemeToggle />
+                        {currentUser && <UserNav user={currentUser} />}
+                    </div>
+                    </header>
+
+                    <main className="flex flex-1 flex-col gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
+                        {children}
+                    </main>
+                </SidebarInset>
+            </>
+        )
     }
 
-
-    const getPageTitle = () => {
-        if (pathname.startsWith('/dashboard')) return 'Dashboard';
-        const segment = pathname.split('/').pop();
-        if (!segment) return 'Dashboard';
-        return segment.charAt(0).toUpperCase() + segment.slice(1);
-    }
-    
-    return (
-        <>
-            <Sidebar>
-                <SidebarHeader className="p-4">
-                <div className="flex items-center gap-2">
-                    <HardHat className="h-8 w-8 text-primary" />
-                    <span className="font-semibold text-xl">FieldOps</span>
-                </div>
-                </SidebarHeader>
-                <SidebarContent>
-                {currentUser && <MainNav role={currentUser.role} />}
-                </SidebarContent>
-            </Sidebar>
-
-            <SidebarInset>
-                <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-                <SidebarTrigger className="sm:hidden" />
-                <div className="flex-1">
-                    <h1 className="font-semibold text-lg capitalize">{getPageTitle()}</h1>
-                </div>
-                <div className="flex items-center gap-4">
-                    <ThemeToggle />
-                    {currentUser && <UserNav user={currentUser} />}
-                </div>
-                </header>
-
-                <main className="flex flex-1 flex-col gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
-                    {children}
-                </main>
-            </SidebarInset>
-        </>
-    )
+    // In all other cases (e.g. loading on auth page, redirecting) show loading
+    return <LoadingAnimation />;
 }

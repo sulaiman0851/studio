@@ -39,7 +39,6 @@ const backgroundImages = [
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [currentBgIndex, setCurrentBgIndex] = useState(0);
-  const router = useRouter();
   const supabase = createClientComponentClient();
 
   useEffect(() => {
@@ -77,8 +76,8 @@ export default function LoginPage() {
         title: 'Login Successful',
         description: `Welcome back!`,
       });
-      // The onAuthStateChange listener in app-shell will handle the redirect
-      router.refresh();
+      // The onAuthStateChange listener in app-shell will handle the redirect.
+      // No need to setIsLoading(false) as a redirect is about to happen.
     }
   }
 
