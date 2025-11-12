@@ -77,9 +77,9 @@ export default function LoginPage() {
         title: 'Login Successful',
         description: `Welcome back!`,
       });
-      // Explicitly redirect to the dashboard.
-      // AppShell will handle showing the loader while data is fetched.
-      router.push('/dashboard');
+      // Don't push here, AppShell will handle the redirect.
+      // We just need to refresh the page to trigger the auth state change to be picked up by the middleware.
+      router.refresh();
     }
   }
 

@@ -126,30 +126,35 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
     const isAuthPage = pathname === '/login' || pathname === '/register';
 
     useEffect(() => {
-        if (loading) return; // Wait until loading is complete
+        // Wait until loading is complete before doing any redirection
+        if (loading) return;
 
+        // If we are done loading and there's no user,
+        // and we are NOT on an auth page, redirect to login.
         if (!currentUser && !isAuthPage) {
             router.push('/login');
-        } else if (currentUser && isAuthPage) {
+        } 
+        // If we are done loading and there IS a user,
+        // and we ARE on an auth page, redirect to the dashboard.
+        else if (currentUser && isAuthPage) {
             router.push('/dashboard');
         }
-    }, [loading, currentUser, isAuthPage, router, pathname]);
+    }, [loading, currentUser, isAuthPage, router]);
     
 
-    // While loading, show a loading animation, except on auth pages
-    // On auth pages, we want to show the form even while checking session
+    // While loading, show a loading animation, unless we are on an auth page.
+    // On auth pages, we show the form immediately for a better user experience.
     if (loading && !isAuthPage) {
         return <LoadingAnimation />;
     }
     
-    // If we are on an auth page, and loading is done, but there is no user
-    // then render the auth page (login/register form)
-    if (!loading && isAuthPage && !currentUser) {
+    // If not authenticated and on an auth page, show the auth page content.
+    if (!currentUser && isAuthPage) {
         return <>{children}</>;
     }
     
-    // If we are not on an auth page and there is a user, render the main app
-    if (!isAuthPage && currentUser) {
+    // If authenticated and not on an auth page, render the main app layout.
+    if (currentUser && !isAuthPage) {
         const getPageTitle = () => {
             if (pathname.startsWith('/dashboard')) return 'Dashboard';
             const segment = pathname.split('/').pop();
@@ -191,6 +196,6 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
         )
     }
 
-    // In all other cases (e.g. loading on auth page, redirecting) show loading
+    // In all other cases (e.g. initial load, during redirects), show a loading screen.
     return <LoadingAnimation />;
 }
