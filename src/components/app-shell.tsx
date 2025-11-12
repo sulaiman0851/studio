@@ -123,7 +123,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
 
-    const isAuthPage = pathname === '/login' || pathname === '/register';
+    const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/buatakun';
 
     useEffect(() => {
         // This effect handles redirection logic. It runs whenever the loading state or currentUser changes.
@@ -139,7 +139,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
             // redirect to the main dashboard.
             router.push('/dashboard');
         }
-    }, [loading, currentUser, isAuthPage, router]);
+    }, [loading, currentUser, isAuthPage, router, pathname]);
     
 
     // While loading, show a loading animation, unless we are on an auth page.
@@ -197,5 +197,6 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
     }
 
     // In all other cases (e.g. initial load, during redirects), show a loading screen.
+    // This is especially important for the brief moment after `router.refresh()` is called.
     return <LoadingAnimation />;
 }

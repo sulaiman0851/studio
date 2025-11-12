@@ -79,10 +79,10 @@ export default function LoginPage() {
     } else {
       toast({
         title: 'Login Successful',
-        description: `Welcome back!`,
+        description: `Welcome back! Redirecting...`,
       });
-      // This is crucial. It forces a server-side rerender of the layout,
-      // which allows AppShell to pick up the new auth state correctly.
+      // This is the CRUCIAL fix. It forces a server-side rerender of the layout,
+      // which allows AppShell to pick up the new auth state correctly and redirect.
       router.refresh();
     }
   }
