@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { HardHat, AlertTriangle } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClientComponentClient, Session } from '@supabase/auth-helpers-nextjs';
 
 import type { Job, User } from '@/lib/types';
 import {
@@ -80,7 +80,8 @@ function AppProvider({ children }: { children: React.ReactNode }) {
   const supabase = createClientComponentClient();
 
   useEffect(() => {
-    async function loadData(session: any) {
+    async function loadData(session: Session | null) {
+        setLoading(true);
         if (session) {
             const { users: fetchedUsers, jobs: fetchedJobs, currentUser: fetchedCurrentUser } = await getInitialData();
             setUsers(fetchedUsers);
@@ -94,19 +95,15 @@ function AppProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
     }
     
-    // Initial load
-    supabase.auth.getSession().then(({ data: { session } }) => {
-        loadData(session);
-    });
-
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        if (event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') {
-          loadData(session);
+        if (session) {
+            loadData(session);
+        } else {
+            loadData(null);
         }
-        if (event === 'SIGNED_OUT') {
-          loadData(null);
-          router.push('/login');
+        if(event === 'SIGNED_OUT') {
+            router.push('/login');
         }
       }
     );
@@ -161,9 +158,14 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
         return <LoadingAnimation />;
     }
     
-    if (!currentUser) {
+    if (!currentUser && !isAuthPage) {
         return <LoadingAnimation />;
     }
+    
+    if(!currentUser) {
+        return <LoadingAnimation />;
+    }
+
 
     const getPageTitle = () => {
         if (pathname.startsWith('/dashboard')) return 'Dashboard';
