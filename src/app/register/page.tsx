@@ -88,7 +88,7 @@ export default function RegisterPage() {
     } else {
         toast({
             title: 'Pendaftaran Berhasil',
-            description: 'Akun Anda telah dibuat. Silakan periksa email Anda untuk konfirmasi.',
+            description: 'Akun Anda telah berhasil dibuat. Silakan login.',
         });
         router.push('/login');
     }
