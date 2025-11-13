@@ -86,12 +86,7 @@ function AppProvider({ children }: { children: React.ReactNode }) {
             setUsers(fetchedUsers);
             setJobs(fetchedJobs);
             setCurrentUser(fetchedCurrentUser);
-            if (fetchedCurrentUser) {
-              toast({
-                title: 'Login Successful',
-                description: `Welcome back, ${fetchedCurrentUser.name}!`,
-              });
-            }
+            // Toast moved to AppShellContent to avoid race conditions on initial load
         } else {
             setCurrentUser(null);
             setJobs([]);
@@ -131,6 +126,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
     const { currentUser, loading } = useAppContext();
     const pathname = usePathname();
     const router = useRouter();
+    const [initialLoad, setInitialLoad] = useState(true);
 
     const authRoutes = ['/login', '/register', '/buatakun'];
     const isAuthRoute = authRoutes.includes(pathname);
@@ -145,19 +141,31 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
             router.push('/login');
         }
 
-        // If logged in and on an auth page
-        if (currentUser && isAuthRoute) {
-            router.push('/dashboard');
+        // If logged in and on an auth page, or just logged in
+        if (currentUser) {
+             if (isAuthRoute) {
+                router.push('/dashboard');
+            }
+            // Show welcome toast only on initial successful login, not every refresh
+            if (initialLoad) {
+                toast({
+                    title: 'Login Successful',
+                    description: `Welcome back, ${currentUser.name}!`,
+                });
+                setInitialLoad(false);
+            }
         }
-    }, [loading, currentUser, isAuthRoute, router, pathname]);
+    }, [loading, currentUser, isAuthRoute, router, pathname, initialLoad]);
 
-    // If still loading, show a loading animation, unless we're on an auth page already
+    // Show loading animation for protected routes during initial load
     if (loading && !isAuthRoute) {
         return <LoadingAnimation />;
     }
 
-    // If not authenticated and on an auth page, render the auth page
-    if (!currentUser && isAuthRoute) {
+    // If user is not authenticated, only render the auth pages or the not-found page passed by Next.js
+    if (!currentUser) {
+        // We let Next.js handle showing the 404 page by just rendering children.
+        // The redirect logic above will handle unauthorized access to protected routes.
         return <>{children}</>;
     }
     
@@ -204,6 +212,6 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
         )
     }
 
-    // Fallback for edge cases, e.g. redirecting from a protected route
+    // Fallback for edge cases, e.g. during a redirect
     return <LoadingAnimation />;
 }
