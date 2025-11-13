@@ -1,151 +1,76 @@
-
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-
-import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { toast } from '@/hooks/use-toast';
-import { Loader2, HardHat } from 'lucide-react';
-
-const loginSchema = z.object({
-  email: z.string().email({ message: 'Please enter a valid email address.' }),
-  password: z.string().min(1, { message: 'Password is required.' }),
-  remember: z.boolean().optional(),
-});
+import { createClient } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
-  const [isLoading, setIsLoading] = useState(false);
-  const supabase = createClientComponentClient();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const router = useRouter();
+  const supabase = createClient();
 
-  const form = useForm<z.infer<typeof loginSchema>>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
-  });
-
-  async function onSubmit(values: z.infer<typeof loginSchema>) {
-    setIsLoading(true);
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     const { error } = await supabase.auth.signInWithPassword({
-      email: values.email,
-      password: values.password,
+      email,
+      password,
     });
 
     if (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Login Gagal',
-        description: error.message || 'Email atau kata sandi salah. Silakan coba lagi.',
-      });
-      setIsLoading(false);
+      alert(error.message);
     } else {
-      router.refresh();
+      router.push('/dashboard');
     }
-  }
+  };
 
   return (
-    <div className="w-full h-screen flex items-center justify-center animated-gradient">
-        <Card className="w-full max-w-sm bg-card/80 backdrop-blur-sm">
-            <CardHeader className="text-center">
-                <div className="mb-4 flex justify-center">
-                    <HardHat className="h-12 w-12 text-primary" />
-                </div>
-                <CardTitle className="text-2xl">Welcome Back!</CardTitle>
-                <CardDescription>Sign in to your FieldOps account</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                            <Input type="email" placeholder="email@example.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                    <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                            <Input type="password" placeholder="••••••••" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                    <div className="flex items-center justify-between">
-                        <FormField
-                        control={form.control}
-                        name="remember"
-                        render={({ field }) => (
-                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                            <FormControl>
-                                <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                                />
-                            </FormControl>
-                            <div className="space-y-1 leading-none">
-                                <FormLabel>
-                                Remember me
-                                </FormLabel>
-                            </div>
-                            </FormItem>
-                        )}
-                        />
-                        <Link href="#" className="text-sm font-medium text-primary hover:underline">
-                            Forgot password?
-                        </Link>
-                    </div>
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Sign In
-                    </Button>
-                </form>
-                </Form>
+    <div className="flex flex-col items-center justify-center min-h-screen py-2">
+      <main className="flex flex-col items-center justify-center w-full flex-1 px-20 text-center">
+        <h1 className="text-4xl font-bold">
+          Login
+        </h1>
 
-                <div className="mt-6 text-center text-sm">
-                Belum punya akun?{' '}
-                <Link href="/register" className="font-medium text-primary hover:underline">
-                    Sign Up
-                </Link>
-                </div>
-                 <div className="mt-2 text-center text-sm">
-                    Butuh akun cepat?{' '}
-                    <Link href="/buatakun" className="font-medium text-primary hover:underline">
-                        Buat Akun Cepat
-                    </Link>
-                </div>
-            </CardContent>
-        </Card>
+        <form className="mt-8 space-y-6" onSubmit={handleLogin}>
+          <div className="rounded-md shadow-sm -space-y-px">
+            <div>
+              <input
+                id="email-address"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="Email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div>
+            <button
+              type="submit"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Sign in
+            </button>
+          </div>
+        </form>
+      </main>
     </div>
   );
 }
