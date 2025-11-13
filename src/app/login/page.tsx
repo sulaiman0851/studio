@@ -151,6 +151,12 @@ export default function LoginPage() {
                     Sign Up
                 </Link>
                 </div>
+                 <div className="mt-2 text-center text-sm">
+                    Butuh akun cepat?{' '}
+                    <Link href="/buatakun" className="font-medium text-primary hover:underline">
+                        Buat Akun Cepat
+                    </Link>
+                </div>
             </CardContent>
         </Card>
       </div>

@@ -102,8 +102,7 @@ function AppProvider({ children }: { children: React.ReactNode }) {
     
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        // Only set loading to true for SIGNED_IN event to avoid flicker on logout
-        if (event === 'SIGNED_IN') {
+        if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
           setLoading(true);
         }
         loadData(session);
@@ -133,38 +132,37 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
 
-    const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/buatakun';
+    const authRoutes = ['/login', '/register', '/buatakun'];
+    const isAuthRoute = authRoutes.includes(pathname);
 
     useEffect(() => {
-        // This effect handles redirection logic. It's the single source of truth.
-        // It runs whenever the loading state or currentUser changes.
         if (loading) {
-            return; // Do nothing while the auth state is being determined.
+            return; // Do nothing while loading
         }
 
-        if (!currentUser && !isAuthPage) {
-            // If we are done loading, there's no user, and we're not on an auth page,
-            // redirect to the login page.
+        // If not logged in and trying to access a protected page
+        if (!currentUser && !isAuthRoute) {
             router.push('/login');
-        } else if (currentUser && isAuthPage) {
-            // If we are done loading, there IS a user, and we are somehow still on an auth page,
-            // redirect to the main dashboard.
+        }
+
+        // If logged in and on an auth page
+        if (currentUser && isAuthRoute) {
             router.push('/dashboard');
         }
-    }, [loading, currentUser, isAuthPage, router]);
-    
-    // If we're still loading the initial auth state, show a loading screen.
-    if (loading) {
+    }, [loading, currentUser, isAuthRoute, router, pathname]);
+
+    // If still loading, show a loading animation, unless we're on an auth page already
+    if (loading && !isAuthRoute) {
         return <LoadingAnimation />;
     }
-    
-    // If not authenticated and we are on an auth page, show the auth page content.
-    if (!currentUser && isAuthPage) {
+
+    // If not authenticated and on an auth page, render the auth page
+    if (!currentUser && isAuthRoute) {
         return <>{children}</>;
     }
     
-    // If authenticated and not on an auth page, render the main app layout.
-    if (currentUser && !isAuthPage) {
+    // If authenticated, render the main app layout
+    if (currentUser) {
         const getPageTitle = () => {
             if (pathname.startsWith('/dashboard')) return 'Dashboard';
             const segment = pathname.split('/').pop();
@@ -206,6 +204,6 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
         )
     }
 
-    // This is a fallback case, typically shown during the brief moment of redirection.
+    // Fallback for edge cases, e.g. redirecting from a protected route
     return <LoadingAnimation />;
 }
