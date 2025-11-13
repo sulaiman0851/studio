@@ -156,7 +156,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
         } 
     }, [loading, currentUser, isAuthRoute, router, pathname, welcomeToastShown]);
 
-    // RENDER LOGIC - This is the definitive fix.
+    // RENDER LOGIC
     
     // 1. While loading, show a full-screen animation.
     if (loading) {
@@ -209,20 +209,8 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
         )
     }
 
-    // 3. If NOT logged in, only render children if it's an authentication route.
-    // This allows login/register/etc. pages to show. For any other route (including 404s),
-    // the useEffect above will have already triggered a redirect to /login, so we can safely show
-    // a loading screen as a fallback.
-    if (!currentUser && isAuthRoute) {
-        return <>{children}</>;
-    }
-    
-    // 4. Default case for unauthenticated users on protected routes, showing loading while redirecting.
-    // This also implicitly handles rendering the 404 page correctly because `children` will be the NotFound component if Next.js serves it.
-    // When not on an auth route, the useEffect handles the redirect logic.
-    if (!isAuthRoute) {
-        return <>{children}</>;
-    }
-    
-    return <LoadingAnimation />;
+    // 3. If NOT logged in, only render children if it's an authentication route OR
+    //    if it's any other route. This allows the 404 page to render.
+    //    The redirect for protected pages is removed to fix the 404 bug.
+    return <>{children}</>;
 }

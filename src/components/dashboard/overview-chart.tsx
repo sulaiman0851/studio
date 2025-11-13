@@ -1,32 +1,37 @@
 
 "use client";
 
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { Job } from "@/lib/types";
+import { format, parse, startOfMonth } from 'date-fns';
 
 interface OverviewChartProps {
   jobs: Job[];
 }
 
 export function OverviewChart({ jobs }: OverviewChartProps) {
-  const data = jobs.reduce((acc, job) => {
-    const month = new Date(job.date).toLocaleString('default', { month: 'short' });
-    const existingMonth = acc.find(item => item.name === month);
-    if (existingMonth) {
-      existingMonth.total += 1;
-    } else {
-      acc.push({ name: month, total: 1 });
+  const monthlyData = jobs.reduce((acc, job) => {
+    const monthKey = format(startOfMonth(new Date(job.date)), 'yyyy-MM');
+    if (!acc[monthKey]) {
+      acc[monthKey] = { name: format(new Date(job.date), 'MMM'), total: 0 };
     }
+    acc[monthKey].total += 1;
     return acc;
-  }, [] as { name: string; total: number }[]);
+  }, {} as Record<string, { name: string; total: number }>);
 
-  // Simple sort for past 12 months (demo purpose)
-  const monthOrder = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const sortedData = data.sort((a, b) => monthOrder.indexOf(a.name) - monthOrder.indexOf(b.name));
+  const sortedData = Object.keys(monthlyData)
+    .sort()
+    .map(key => monthlyData[key]);
 
   return (
     <ResponsiveContainer width="100%" height={350}>
-      <BarChart data={sortedData}>
+      <AreaChart data={sortedData}>
+        <defs>
+          <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
+            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+          </linearGradient>
+        </defs>
         <XAxis
           dataKey="name"
           stroke="hsl(var(--muted-foreground))"
@@ -40,13 +45,23 @@ export function OverviewChart({ jobs }: OverviewChartProps) {
           tickLine={false}
           axisLine={false}
           tickFormatter={(value) => `${value}`}
+          allowDecimals={false}
         />
-        <Bar
+        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+        <Tooltip 
+            contentStyle={{
+                backgroundColor: 'hsl(var(--background))',
+                borderColor: 'hsl(var(--border))',
+            }}
+        />
+        <Area
+          type="monotone"
           dataKey="total"
-          fill="hsl(var(--primary))"
-          radius={[4, 4, 0, 0]}
+          stroke="hsl(var(--primary))"
+          fillOpacity={1} 
+          fill="url(#colorTotal)"
         />
-      </BarChart>
+      </AreaChart>
     </ResponsiveContainer>
   );
 }

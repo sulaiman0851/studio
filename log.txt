@@ -1,0 +1,11 @@
+
+getInitialData returned: 
+{fetchedUsers: Array(0), fetchedJobs: Array(0), fetchedCurrentUser: null}
+AppShellContent render logic. State: 
+{loading: false, currentUser: null}
+Render: Children only (auth route or 404) 
+AppShellContent render logic. State: 
+{loading: false, currentUser: null}
+Render: Children only (auth route or 404) 
+AppShellContent useEffect triggered. State: 
+{loading: false, currentUser: null, isAuthRoute: true, pathname: "/login"}
