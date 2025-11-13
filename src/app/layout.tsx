@@ -8,6 +8,9 @@ import { AppShell } from '@/components/app-shell';
 export const metadata: Metadata = {
   title: 'FieldOps - FTTH Job Management',
   description: 'An application for FTTH technicians to manage job tasks efficiently.',
+  icons: {
+    icon: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({
