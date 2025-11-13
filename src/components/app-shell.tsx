@@ -19,6 +19,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { LoadingAnimation } from '@/components/loading-animation';
 import { getInitialData } from '@/lib/actions';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
+import { toast } from '@/hooks/use-toast';
 
 
 interface AppContextType {
@@ -85,6 +86,12 @@ function AppProvider({ children }: { children: React.ReactNode }) {
             setUsers(fetchedUsers);
             setJobs(fetchedJobs);
             setCurrentUser(fetchedCurrentUser);
+            if (fetchedCurrentUser) {
+              toast({
+                title: 'Login Successful',
+                description: `Welcome back, ${fetchedCurrentUser.name}!`,
+              });
+            }
         } else {
             setCurrentUser(null);
             setJobs([]);
@@ -95,7 +102,10 @@ function AppProvider({ children }: { children: React.ReactNode }) {
     
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        setLoading(true);
+        // Only set loading to true for SIGNED_IN event to avoid flicker on logout
+        if (event === 'SIGNED_IN') {
+          setLoading(true);
+        }
         loadData(session);
       }
     );
@@ -143,16 +153,12 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
         }
     }, [loading, currentUser, isAuthPage, router]);
     
-
-    // While loading, show a full-screen loading animation, UNLESS we are on an auth page.
-    // On auth pages, we want to show the form immediately for a better user experience,
-    // even while the initial auth state is being checked in the background.
-    if (loading && !isAuthPage) {
+    // If we're still loading the initial auth state, show a loading screen.
+    if (loading) {
         return <LoadingAnimation />;
     }
     
     // If not authenticated and we are on an auth page, show the auth page content.
-    // This allows the login/register pages to be rendered.
     if (!currentUser && isAuthPage) {
         return <>{children}</>;
     }
@@ -200,7 +206,6 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
         )
     }
 
-    // In all other cases (e.g. the very initial load, or during redirects), show a loading screen.
-    // This is the fallback state that prevents the app from showing a blank page or incorrect UI.
+    // This is a fallback case, typically shown during the brief moment of redirection.
     return <LoadingAnimation />;
 }

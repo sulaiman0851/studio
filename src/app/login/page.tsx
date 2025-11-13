@@ -77,10 +77,6 @@ export default function LoginPage() {
       });
       setIsLoading(false);
     } else {
-      toast({
-        title: 'Login Successful',
-        description: `Welcome back! Redirecting...`,
-      });
       // This is the CRUCIAL fix. It forces a server-side rerender of the layout,
       // which allows AppShell to pick up the new auth state correctly and redirect.
       router.refresh();
