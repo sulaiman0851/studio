@@ -127,7 +127,6 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
     const authRoutes = ['/login', '/register', '/buatakun'];
     const isAuthRoute = authRoutes.includes(pathname);
     
-    // This state tracks if we've shown the initial welcome toast
     const [welcomeToastShown, setWelcomeToastShown] = useState(false);
 
     useEffect(() => {
@@ -135,25 +134,26 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
             return; // Wait until we know if a user is logged in or not
         }
 
-        // Case 1: User is logged in
-        if (currentUser) {
-            // If they are on a login/register page, redirect them to the dashboard
-            if (isAuthRoute) {
-                router.push('/dashboard');
-            }
-            // Show welcome toast only once after the initial login completes
-            if (!welcomeToastShown) {
-                 toast({
-                    title: 'Login Successful',
-                    description: `Welcome back, ${currentUser.name}!`,
-                });
-                setWelcomeToastShown(true);
-            }
-        } 
-        // Case 2: User is NOT logged in and is trying to access a protected page
-        else if (!isAuthRoute) {
-            router.push('/login');
+        // Case 1: User is logged in and tries to access an auth page
+        if (currentUser && isAuthRoute) {
+            router.push('/dashboard');
+            return;
         }
+
+        // Case 2: User is NOT logged in and tries to access a protected page
+        if (!currentUser && !isAuthRoute) {
+            router.push('/login');
+            return;
+        }
+
+        // Show welcome toast only once after the initial login completes
+        if (currentUser && !welcomeToastShown) {
+             toast({
+                title: 'Login Successful',
+                description: `Welcome back, ${currentUser.name}!`,
+            });
+            setWelcomeToastShown(true);
+        } 
     }, [loading, currentUser, isAuthRoute, router, pathname, welcomeToastShown]);
 
     // RENDER LOGIC - This is the definitive fix.
@@ -162,15 +162,9 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
     if (loading) {
         return <LoadingAnimation />;
     }
-
-    // 2. If NOT logged in AND on an auth route, show the page (e.g., login, register).
-    // This also implicitly allows the 404 page to render because `isAuthRoute` will be false,
-    // but the useEffect above won't redirect because we now check `!isAuthRoute` before redirecting.
-    if (!currentUser && isAuthRoute) {
-        return <>{children}</>;
-    }
     
-    // 3. If logged in, show the full app shell with sidebar.
+    // 2. If logged in, show the full app shell with sidebar.
+    // This correctly handles all protected routes and their content.
     if (currentUser) {
         const getPageTitle = () => {
             // Handle special case for root dashboard route
@@ -215,12 +209,20 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
         )
     }
 
-    // 4. Fallback for any other case (e.g. not logged in and not on auth route)
-    // which should be handled by the useEffect redirect, but we show loading as a safe default.
-    // This also correctly handles showing the 404 page because `children` will be the NotFound component.
-    if (!isAuthRoute) {
-        return <>{children}</>
+    // 3. If NOT logged in, only render children if it's an authentication route.
+    // This allows login/register/etc. pages to show. For any other route (including 404s),
+    // the useEffect above will have already triggered a redirect to /login, so we can safely show
+    // a loading screen as a fallback.
+    if (!currentUser && isAuthRoute) {
+        return <>{children}</>;
     }
-
+    
+    // 4. Default case for unauthenticated users on protected routes, showing loading while redirecting.
+    // This also implicitly handles rendering the 404 page correctly because `children` will be the NotFound component if Next.js serves it.
+    // When not on an auth route, the useEffect handles the redirect logic.
+    if (!isAuthRoute) {
+        return <>{children}</>;
+    }
+    
     return <LoadingAnimation />;
 }
