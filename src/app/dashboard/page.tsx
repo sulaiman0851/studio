@@ -7,9 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { OverviewChart } from '@/components/dashboard/overview-chart';
 import { RecentJobs } from '@/components/dashboard/recent-jobs';
 import { useAppContext } from '@/components/app-shell';
+import { useEffect } from 'react';
 
 export default function DashboardPage() {
   const { currentUser, jobs, users } = useAppContext();
+
+  useEffect(() => {
+    console.log('/dashboard digunakan!');
+  }, []);
 
   if (!currentUser || !jobs || !users) {
     return null; // Data is loading in AppShell
