@@ -1,77 +1,100 @@
 'use client';
-
 import { useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { toast } from '@/components/ui/use-toast';
+import { HardHat } from 'lucide-react';
+import { Toaster } from '@/components/ui/toaster';
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     const { error } = await supabase.auth.signUp({
       email,
       password,
     });
 
     if (error) {
-      alert(error.message);
+      toast({
+        variant: 'destructive',
+        title: 'Registrasi Gagal',
+        description: error.message,
+      });
     } else {
-      alert('Registration successful! Please check your email to confirm your account.');
+      toast({
+        title: 'Registrasi Berhasil',
+        description: 'Silakan cek email Anda untuk verifikasi.',
+      });
       router.push('/login');
     }
+    setLoading(false);
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen py-2">
-      <main className="flex flex-col items-center justify-center w-full flex-1 px-20 text-center">
-        <h1 className="text-4xl font-bold">
-          Register
-        </h1>
-
-        <form className="mt-8 space-y-6" onSubmit={handleRegister}>
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <input
-                id="email-address"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+    <>
+      <Toaster />
+      <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2 xl:min-h-screen">
+        <div className="flex items-center justify-center py-12">
+          <div className="mx-auto grid w-[350px] gap-6">
+            <div className="grid gap-2 text-center">
+              <h1 className="text-3xl font-bold">Daftar</h1>
+              <p className="text-balance text-muted-foreground">
+                Buat akun baru untuk mulai berkolaborasi.
+              </p>
             </div>
-            <div>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+            <form onSubmit={handleRegister} className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? 'Membuat Akun...' : 'Buat Akun'}
+              </Button>
+            </form>
+            <div className="mt-4 text-center text-sm">
+              Sudah punya akun?{' '}
+              <Link href="/login" className="underline">
+                Login
+              </Link>
             </div>
           </div>
-
-          <div>
-            <button
-              type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              Register
-            </button>
-          </div>
-        </form>
-      </main>
-    </div>
+        </div>
+        <div className="hidden bg-muted lg:flex items-center justify-center flex-col text-center p-8 bg-background">
+          <HardHat className="h-24 w-24 mb-4 text-primary" />
+          <h2 className="text-4xl font-bold mb-2">Platform Kolaborasi Proyek</h2>
+          <p className="text-lg text-muted-foreground">
+            Kelola tugas, bagikan file, dan berkomunikasi dengan tim Anda secara efisien.
+          </p>
+        </div>
+      </div>
+    </>
   );
 }
