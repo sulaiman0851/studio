@@ -6,10 +6,12 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import LoadingAnimation from '@/components/loading-animation';
 
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const supabase = createClient();
   const router = useRouter();
 
@@ -30,6 +32,7 @@ export default function DashboardPage() {
           router.push('/login');
         } else if (profileData) {
           setUserProfile(profileData);
+          setLoading(false);
         } else {
            router.push('/login');
         }
@@ -45,12 +48,8 @@ export default function DashboardPage() {
     router.push('/login');
   };
 
-  if (!user || !userProfile) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <div className="text-lg font-medium">Loading...</div>
-      </div>
-    );
+  if (loading) {
+    return <LoadingAnimation />;
   }
 
   return (
@@ -60,9 +59,9 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-bold text-gray-800">FieldOps Dashboard</h1>
         <div className="flex items-center space-x-4">
           <span className="text-gray-600 hidden sm:inline">
-            Welcome, {userProfile.username} ({userProfile.role})!
+            Welcome, {userProfile?.username} ({userProfile?.role})!
           </span>
-          {userProfile.role === 'admin' && (
+          {userProfile?.role === 'admin' && (
              <Button variant="outline" onClick={() => router.push('/editrole')}>
                 Edit Roles
             </Button>
