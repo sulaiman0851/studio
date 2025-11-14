@@ -1,12 +1,36 @@
+
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { format, parseISO } from 'date-fns';
+
+type Job = {
+  created_at: string;
+};
+
+type ChartData = {
+  name: string;
+  total: number;
+};
+
+type Timeframe = 'day' | 'month' | 'year';
 
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [timeframe, setTimeframe] = useState<Timeframe>('month');
   const supabase = createClient();
   const router = useRouter();
 
@@ -19,27 +43,83 @@ export default function DashboardPage() {
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('username, role')
-          .eq('id', userData.user.id);
+          .eq('id', userData.user.id)
+          .single();
 
         if (profileError) {
           console.error('Error fetching profile:', profileError.message);
-        } else if (profileData && profileData.length > 0) {
-          setUserProfile(profileData[0]);
+          router.push('/login');
+        } else if (profileData) {
+          setUserProfile(profileData);
         } else {
-          // Handle case where profile is not found
-          console.error('Profile not found for user:', userData.user.id);
+          router.push('/login');
         }
       } else {
         router.push('/login');
       }
     };
     getUserAndProfile();
-  }, []);
+  }, [router, supabase]);
+
+  const fetchJobs = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('jobs')
+      .select('created_at');
+
+    if (error) {
+      console.error('Error fetching jobs:', error.message);
+    } else {
+      setJobs(data as Job[]);
+    }
+  }, [supabase]);
+
+  useEffect(() => {
+    if (user) {
+      fetchJobs();
+    }
+  }, [user, fetchJobs]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/login');
   };
+
+  const processDataForChart = useCallback((): ChartData[] => {
+    const counts: { [key: string]: number } = {};
+    
+    jobs.forEach(job => {
+      const date = parseISO(job.created_at);
+      let key: string;
+
+      switch (timeframe) {
+        case 'day':
+          key = format(date, 'yyyy-MM-dd');
+          break;
+        case 'year':
+          key = format(date, 'yyyy');
+          break;
+        case 'month':
+        default:
+          key = format(date, 'MMM'); // 'Jan', 'Feb', etc.
+          break;
+      }
+      
+      counts[key] = (counts[key] || 0) + 1;
+    });
+
+    if (timeframe === 'month') {
+        const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return monthOrder.map(month => ({
+            name: month,
+            total: counts[month] || 0,
+        }));
+    }
+
+    return Object.entries(counts)
+      .map(([name, total]) => ({ name, total }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+      
+  }, [jobs, timeframe]);
 
   if (!user || !userProfile) {
     return (
@@ -49,76 +129,69 @@ export default function DashboardPage() {
     );
   }
 
+  const chartData = processDataForChart();
+
   return (
     <div className="min-h-screen bg-gray-100 p-4">
       {/* Header */}
-      <header className="flex items-center justify-between bg-white p-4 rounded-lg shadow mb-4">
-        <h1 className="text-2xl font-bold text-gray-800">Project Dashboard</h1>
+      <header className="flex items-center justify-between bg-white p-4 rounded-lg shadow mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">FieldOps Dashboard</h1>
         <div className="flex items-center space-x-4">
-          <span className="text-gray-600">Welcome, {userProfile.username} ({userProfile.role})!</span>
-          <button
+          <span className="text-gray-600 hidden sm:inline">
+            Welcome, {userProfile.username} ({userProfile.role})!
+          </span>
+          {userProfile.role === 'admin' && (
+             <Button variant="outline" onClick={() => router.push('/editrole')}>
+                Edit Roles
+            </Button>
+          )}
+          <Button
             onClick={handleLogout}
-            className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+            variant="destructive"
           >
             Logout
-          </button>
+          </Button>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Stats Section */}
-        <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-          <div className="bg-white p-5 rounded-lg shadow flex flex-col items-start">
-            <h3 className="text-lg font-semibold text-gray-700">Total Projects</h3>
-            <p className="text-3xl font-bold text-gray-900 mt-2">12</p>
-            <p className="text-sm text-gray-500">+2 since last month</p>
-          </div>
-          <div className="bg-white p-5 rounded-lg shadow flex flex-col items-start">
-            <h3 className="text-lg font-semibold text-gray-700">Tasks Completed</h3>
-            <p className="text-3xl font-bold text-gray-900 mt-2">152</p>
-            <p className="text-sm text-gray-500">+20.1% from last month</p>
-          </div>
-          <div className="bg-white p-5 rounded-lg shadow flex flex-col items-start">
-            <h3 className="text-lg font-semibold text-gray-700">Files Shared</h3>
-            <p className="text-3xl font-bold text-gray-900 mt-2">34</p>
-            <p className="text-sm text-gray-500">+19% from last month</p>
-          </div>
-          <div className="bg-white p-5 rounded-lg shadow flex flex-col items-start">
-            <h3 className="text-lg font-semibold text-gray-700">Team Members</h3>
-            <p className="text-3xl font-bold text-gray-900 mt-2">8</p>
-            <p className="text-sm text-gray-500">+1 since last month</p>
-          </div>
-        </div>
-
-        {/* Recent Activity Section */}
-        <div className="md:col-span-1 bg-white p-5 rounded-lg shadow">
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">Recent Activity</h3>
-          <ul className="space-y-3">
-            <li className="flex items-center space-x-3">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <p className="text-gray-700">
-                <span className="font-medium">Olivia Martin</span> pushed a commit to Project Alpha.
-              </p>
-              <span className="text-sm text-gray-500 ml-auto">5m ago</span>
-            </li>
-            <li className="flex items-center space-x-3">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <p className="text-gray-700">
-                <span className="font-medium">Jackson Lee</span> created a new task in Project Beta.
-              </p>
-              <span className="text-sm text-gray-500 ml-auto">10m ago</span>
-            </li>
-            <li className="flex items-center space-x-3">
-              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-              <p className="text-gray-700">
-                <span className="font-medium">Sophia Miller</span> shared a file in Project Gamma.
-              </p>
-              <span className="text-sm text-gray-500 ml-auto">1h ago</span>
-            </li>
-          </ul>
-        </div>
+      <main>
+        <Card>
+          <CardHeader>
+            <CardTitle>Job Activity</CardTitle>
+            <CardDescription>
+              Overview of jobs created over time.
+            </CardDescription>
+            <div className="flex items-center space-x-2 pt-2">
+                <Button variant={timeframe === 'day' ? 'default' : 'outline'} onClick={() => setTimeframe('day')}>Day</Button>
+                <Button variant={timeframe === 'month' ? 'default' : 'outline'} onClick={() => setTimeframe('month')}>Month</Button>
+                <Button variant={timeframe === 'year' ? 'default' : 'outline'} onClick={() => setTimeframe('year')}>Year</Button>
+            </div>
+          </CardHeader>
+          <CardContent className="pl-2">
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart data={chartData}>
+                <XAxis
+                  dataKey="name"
+                  stroke="#888888"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  stroke="#888888"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(value) => `${value}`}
+                />
+                <Bar dataKey="total" fill="currentColor" radius={[4, 4, 0, 0]} className="fill-primary" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
       </main>
     </div>
   );
 }
+

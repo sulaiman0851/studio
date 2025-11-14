@@ -1,9 +1,27 @@
+
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 // Define the Profile type for better type safety
 type Profile = {
@@ -72,6 +90,8 @@ export default function EditRolePage() {
   }, [currentUser, authLoading, router, supabase, fetchAllProfiles]);
 
   const handleSaveRole = async (profileId: string, newRole: string) => {
+    if (!newRole) return;
+    
     const { error } = await supabase
       .from('profiles')
       .update({ role: newRole })
@@ -97,54 +117,57 @@ export default function EditRolePage() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-4">
-      <header className="flex items-center justify-between bg-white p-4 rounded-lg shadow mb-4">
+      <header className="flex items-center justify-between bg-white p-4 rounded-lg shadow mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Edit User Roles</h1>
-        <button onClick={() => router.push('/dashboard')} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">
+        <Button onClick={() => router.push('/dashboard')} variant="outline">
           Back to Dashboard
-        </button>
+        </Button>
       </header>
-      <main className="bg-white p-5 rounded-lg shadow">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Username
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Role
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {profiles.map((profile) => (
-                <tr key={profile.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {profile.username}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {profile.role}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <select
-                      defaultValue={profile.role}
-                      onChange={(e) => handleSaveRole(profile.id, e.target.value)}
-                      className="p-2 border border-gray-300 rounded-md"
-                      disabled={profile.id === currentUser?.id} // Disable changing own role
-                    >
-                      <option value="admin">Admin</option>
-                      <option value="senior">Senior</option>
-                      <option value="engineer">Engineer</option>
-                    </select>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <main>
+        <Card>
+          <CardHeader>
+            <CardTitle>User Management</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Username</TableHead>
+                    <TableHead>Current Role</TableHead>
+                    <TableHead className="text-right">Change Role</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {profiles.map((profile) => (
+                    <TableRow key={profile.id}>
+                      <TableCell className="font-medium">
+                        {profile.username}
+                      </TableCell>
+                      <TableCell>{profile.role}</TableCell>
+                      <TableCell className="text-right">
+                        <Select
+                          defaultValue={profile.role}
+                          onValueChange={(value) => handleSaveRole(profile.id, value)}
+                          disabled={profile.id === currentUser?.id}
+                        >
+                          <SelectTrigger className="w-[180px] float-right">
+                            <SelectValue placeholder="Select a role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="senior">Senior</SelectItem>
+                            <SelectItem value="engineer">Engineer</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       </main>
     </div>
   );
