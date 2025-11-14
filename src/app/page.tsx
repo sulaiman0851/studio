@@ -18,35 +18,42 @@ export default function HomePage() {
     }
   }, [currentUser, loading, router]);
 
-  if (loading || currentUser) {
+  if (loading || (!loading && currentUser)) {
     return <LoadingAnimation />;
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen py-2 bg-background text-foreground">
-      <main className="flex flex-col items-center justify-center w-full flex-1 px-4 sm:px-20 text-center">
-        <h1 className="text-5xl sm:text-6xl font-bold">
-          Welcome to Your App
-        </h1>
-        <p className="mt-3 text-lg sm:text-2xl text-muted-foreground max-w-2xl">
-          The starting point for your next great idea. Built with Next.js and ShadCN UI.
-        </p>
-
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
-          <Button asChild size="lg">
-            <Link href="/login">
-              Login
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="lg">
-            <Link href="/register">
-              Register
-            </Link>
-          </Button>
-        </div>
+    <div className="flex flex-col min-h-screen">
+      <main className="flex-1">
+        <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48">
+          <div className="container px-4 md:px-6">
+            <div className="flex flex-col items-center space-y-4 text-center">
+              <div className="space-y-2">
+                <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none">
+                  Platform Kolaborasi Proyek
+                </h1>
+                <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
+                  Kelola tugas, bagikan file, dan berkomunikasi dengan tim Anda secara efisien.
+                </p>
+              </div>
+              <div className="space-x-4">
+                <Button asChild>
+                  <Link href="/login">
+                    Login
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link href="/register">
+                    Register
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
-      <footer className="w-full h-24 flex items-center justify-center border-t">
+      <footer className="flex items-center justify-center w-full h-24 border-t">
         <p className="text-muted-foreground">Powered by Firebase Studio</p>
       </footer>
     </div>
