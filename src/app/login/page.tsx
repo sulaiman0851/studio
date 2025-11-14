@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/use-toast';
 import { HardHat } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
+import { useAuth } from '@/hooks/use-auth';
+import LoadingAnimation from '@/components/loading-animation';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -16,6 +18,13 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const supabase = createClient();
+  const { currentUser, loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (!authLoading && currentUser) {
+      router.push('/dashboard');
+    }
+  }, [currentUser, authLoading, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,10 +45,14 @@ export default function LoginPage() {
         title: 'Login Berhasil',
         description: 'Anda akan diarahkan ke dashboard.',
       });
-      router.refresh();
+      router.push('/dashboard');
     }
     setLoading(false);
   };
+
+  if (authLoading || (!authLoading && currentUser)) {
+    return <LoadingAnimation />;
+  }
 
   return (
     <>

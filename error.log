@@ -1,0 +1,20 @@
+Console Error
+
+
+Profile not found for user: "9d01b341-38c2-4eea-a701-b260ea8eaa2a"
+
+src/app/dashboard/page.tsx (30:19) @ DashboardPage.useEffect.getUserAndProfile
+
+
+  28 |         } else {
+  29 |           // Handle case where profile is not found
+> 30 |           console.error('Profile not found for user:', userData.user.id);
+     |                   ^
+  31 |         }
+  32 |       } else {
+  33 |         router.push('/login');
+Call Stack
+4
+
+Show 3 ignore-listed frame(s)
+DashboardPage.useEffect.getUserAndProfile

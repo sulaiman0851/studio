@@ -1,0 +1,133 @@
+🧠 Prompt Lengkap Project FieldOps (Apps + Supabase + Telegram Sync)
+
+Tujuan:
+Buat aplikasi web bernama FieldOps, berbasis WebApp dan Supabase (tanpa Express backend), dengan desain modern menggunakan Tailwind CSS.
+Aplikasi digunakan oleh teknisi jaringan FTTH untuk mencatat pekerjaan, melacak progres, dan melakukan sinkronisasi otomatis dengan Telegram Bot sebagai sistem backup.
+
+⚙️ 1. Stack & Arsitektur
+
+Frontend UI: Tailwind CSS
+
+Database & Auth: Supabase
+
+Backup Sync: Telegram Bot API (mengirim snapshot database JSON setiap 12 jam)
+
+Hosting: Vercel (tanpa Express / server custom)
+
+Fitur tambahan: AI Assistant (saran kerja efisien), OCR input form, PDF export, geotag foto
+
+🔑 3. Supabase Setup
+
+Tabel yang dibutuhkan:
+
+users
+
+Kolom	Tipe	Deskripsi
+id	uuid	Primary key
+username	text	unik
+password	text	disimpan dalam hash
+role	text	admin / senior / engineer
+created_at	timestamp	otomatis
+
+jobs
+
+Kolom	Tipe	Deskripsi
+id	uuid	Primary key
+user_id	uuid (relasi ke users.id)	teknisi yang mengerjakan
+job_type	text	jenis pekerjaan
+customer_name	text	nama pelanggan
+serial_number	text	SN (masked default)
+power_rx	text	nilai power
+pppoe_user	text	username dial
+pppoe_pass	text	password dial
+ssid_default	text	SSID default
+ssid_new	text	SSID baru
+reason	text	alasan pekerjaan
+status	text	pending/done/approved
+created_at	timestamp	otomatis
+completed_at	timestamp	opsional
+
+locations
+
+Kolom	Tipe	Deskripsi
+id	uuid	Primary key
+job_id	uuid	relasi ke jobs.id
+latitude	float	posisi lat
+longitude	float	posisi long
+photo_url	text	link ke foto di Supabase Storage
+
+
+👥 5. Role System
+
+Admin: CRUD semua job, approve, export PDF, lihat statistik.
+
+Senior: monitoring job & kasih catatan.
+
+Engineer: input job, update status, upload foto lokasi.
+
+🧾 6. Form Input Job
+
+Job Type:
+
+Instalasi
+
+Troubleshoot
+
+Replace Modem / ONT
+
+Terminate Modem / ONT
+
+Survei
+
+Customer Handling / Support
+
+Maintenance
+
+Re-Aktivasi Modem / ONT
+
+Sub-parameter:
+
+Customer Name
+
+Type Modem/ONT
+
+Serial Number (SN masked default)
+
+Power R/X
+
+PPPOE Username & Password
+
+Default & new SSID + WLAN Key
+
+Reason
+
+🧠 7. Smart Features
+
+SN Masking: tampil ******ANC7C5A, bisa reveal pakai icon 👁️
+
+OCR Integration: hasil OCR auto-input ke form (pakai tesseract.js)
+
+AI Suggestion: pakai OpenAI API (atau local inference) untuk kasih tips kerja cepat
+
+User Role Auth: Supabase Auth bawaan
+
+Geotag Upload: upload foto via Supabase Storage + HTML5 geolocation
+
+PDF Export: pakai jspdf
+
+Telegram Backup: snapshot jobs dan users → kirim JSON via Bot API tiap 12 jam
+
+
+📊 8. Dashboard Admin
+
+Statistik pekerjaan:
+
+Jumlah job per hari/bulan/tahun
+
+Progress bar per engineer
+
+Status pekerjaan: Done, Pending, Approved
+
+Fitur checklist job
+
+Approval system

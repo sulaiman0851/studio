@@ -13,6 +13,7 @@ import { Toaster } from '@/components/ui/toaster';
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const supabase = createClient();
@@ -20,23 +21,40 @@ export default function RegisterPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
     });
 
-    if (error) {
+    if (signUpError) {
       toast({
         variant: 'destructive',
         title: 'Registrasi Gagal',
-        description: error.message,
+        description: signUpError.message,
       });
-    } else {
-      toast({
-        title: 'Registrasi Berhasil',
-        description: 'Silakan cek email Anda untuk verifikasi.',
-      });
-      router.push('/login');
+      setLoading(false);
+      return;
+    }
+
+    if (signUpData.user) {
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ username })
+        .eq('id', signUpData.user.id);
+
+      if (updateError) {
+        toast({
+          variant: 'destructive',
+          title: 'Update Profil Gagal',
+          description: updateError.message,
+        });
+      } else {
+        toast({
+          title: 'Registrasi Berhasil',
+          description: 'Silakan cek email Anda untuk verifikasi.',
+        });
+        router.push('/login');
+      }
     }
     setLoading(false);
   };
@@ -54,6 +72,17 @@ export default function RegisterPage() {
               </p>
             </div>
             <form onSubmit={handleRegister} className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  type="text"
+                  placeholder="username"
+                  required
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                />
+              </div>
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
