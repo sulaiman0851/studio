@@ -1,36 +1,15 @@
 
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { format, parseISO } from 'date-fns';
-
-type Job = {
-  created_at: string;
-};
-
-type ChartData = {
-  name: string;
-  total: number;
-};
-
-type Timeframe = 'day' | 'month' | 'year';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [timeframe, setTimeframe] = useState<Timeframe>('month');
   const supabase = createClient();
   const router = useRouter();
 
@@ -52,7 +31,7 @@ export default function DashboardPage() {
         } else if (profileData) {
           setUserProfile(profileData);
         } else {
-          router.push('/login');
+           router.push('/login');
         }
       } else {
         router.push('/login');
@@ -61,65 +40,10 @@ export default function DashboardPage() {
     getUserAndProfile();
   }, [router, supabase]);
 
-  const fetchJobs = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('jobs')
-      .select('created_at');
-
-    if (error) {
-      console.error('Error fetching jobs:', error.message);
-    } else {
-      setJobs(data as Job[]);
-    }
-  }, [supabase]);
-
-  useEffect(() => {
-    if (user) {
-      fetchJobs();
-    }
-  }, [user, fetchJobs]);
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/login');
   };
-
-  const processDataForChart = useCallback((): ChartData[] => {
-    const counts: { [key: string]: number } = {};
-    
-    jobs.forEach(job => {
-      const date = parseISO(job.created_at);
-      let key: string;
-
-      switch (timeframe) {
-        case 'day':
-          key = format(date, 'yyyy-MM-dd');
-          break;
-        case 'year':
-          key = format(date, 'yyyy');
-          break;
-        case 'month':
-        default:
-          key = format(date, 'MMM'); // 'Jan', 'Feb', etc.
-          break;
-      }
-      
-      counts[key] = (counts[key] || 0) + 1;
-    });
-
-    if (timeframe === 'month') {
-        const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        return monthOrder.map(month => ({
-            name: month,
-            total: counts[month] || 0,
-        }));
-    }
-
-    return Object.entries(counts)
-      .map(([name, total]) => ({ name, total }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-      
-  }, [jobs, timeframe]);
 
   if (!user || !userProfile) {
     return (
@@ -128,8 +52,6 @@ export default function DashboardPage() {
       </div>
     );
   }
-
-  const chartData = processDataForChart();
 
   return (
     <div className="min-h-screen bg-gray-100 p-4">
@@ -158,40 +80,16 @@ export default function DashboardPage() {
       <main>
         <Card>
           <CardHeader>
-            <CardTitle>Job Activity</CardTitle>
+            <CardTitle>Welcome to your Dashboard</CardTitle>
             <CardDescription>
-              Overview of jobs created over time.
+              This is your main hub for managing operations.
             </CardDescription>
-            <div className="flex items-center space-x-2 pt-2">
-                <Button variant={timeframe === 'day' ? 'default' : 'outline'} onClick={() => setTimeframe('day')}>Day</Button>
-                <Button variant={timeframe === 'month' ? 'default' : 'outline'} onClick={() => setTimeframe('month')}>Month</Button>
-                <Button variant={timeframe === 'year' ? 'default' : 'outline'} onClick={() => setTimeframe('year')}>Year</Button>
-            </div>
           </CardHeader>
-          <CardContent className="pl-2">
-            <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={chartData}>
-                <XAxis
-                  dataKey="name"
-                  stroke="#888888"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  stroke="#888888"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(value) => `${value}`}
-                />
-                <Bar dataKey="total" fill="currentColor" radius={[4, 4, 0, 0]} className="fill-primary" />
-              </BarChart>
-            </ResponsiveContainer>
+          <CardContent>
+             <p>Select an option to get started.</p>
           </CardContent>
         </Card>
       </main>
     </div>
   );
 }
-
