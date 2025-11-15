@@ -1,10 +1,76 @@
+'use client';
+
 import React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/components/ui/use-toast';
+
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 
+// Schema for password change form
+const passwordFormSchema = z
+  .object({
+    oldPassword: z.string().min(1, { message: 'Old password is required.' }),
+    newPassword: z.string().min(8, { message: 'New password must be at least 8 characters.' }),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "New passwords don't match.",
+    path: ['confirmPassword'], // Point error to the confirmation field
+  });
+
+type PasswordFormValues = z.infer<typeof passwordFormSchema>;
+
 const SettingsPage = () => {
+  const { currentUser } = useAuth();
+  const { toast } = useToast();
+  const supabase = createClient();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    reset,
+  } = useForm<PasswordFormValues>({
+    resolver: zodResolver(passwordFormSchema),
+  });
+
+  const onSubmitPassword = async (data: PasswordFormValues) => {
+    if (!currentUser?.email) {
+      toast({ title: 'Error', description: 'Could not find user email.', variant: 'destructive' });
+      return;
+    }
+
+    // 1. Verify old password by trying to sign in
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: currentUser.email,
+      password: data.oldPassword,
+    });
+
+    if (signInError) {
+      toast({ title: 'Error', description: 'Incorrect old password.', variant: 'destructive' });
+      return;
+    }
+
+    // 2. If old password is correct, update to the new password
+    const { error: updateError } = await supabase.auth.updateUser({
+      password: data.newPassword,
+    });
+
+    if (updateError) {
+      toast({ title: 'Error', description: `Failed to update password: ${updateError.message}`, variant: 'destructive' });
+    } else {
+      toast({ title: 'Success', description: 'Your password has been updated successfully.' });
+      reset(); // Clear the form
+    }
+  };
+
   return (
     <div>
       <header className="mb-8">
@@ -17,23 +83,48 @@ const SettingsPage = () => {
       </header>
       
       <div className="grid gap-8">
-        {/* Profile Settings */}
+        {/* Profile Settings (Placeholder) */}
         <div className="bg-white p-6 rounded-lg shadow-md dark:bg-gray-800">
           <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Profile</h3>
           <div className="space-y-4">
             <div className="grid w-full max-w-sm items-center gap-1.5">
               <Label htmlFor="name">Full Name</Label>
-              <Input type="text" id="name" placeholder="Your Name" />
+              <Input type="text" id="name" placeholder="Your Name" disabled />
             </div>
             <div className="grid w-full max-w-sm items-center gap-1.5">
               <Label htmlFor="email">Email</Label>
-              <Input type="email" id="email" placeholder="Your Email" />
+              <Input type="email" id="email" placeholder="Your Email" disabled />
             </div>
-            <Button>Update Profile</Button>
+            <Button disabled>Update Profile</Button>
           </div>
         </div>
 
-        {/* Notification Settings */}
+        {/* Change Password */}
+        <div className="bg-white p-6 rounded-lg shadow-md dark:bg-gray-800">
+          <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Change Password</h3>
+          <form onSubmit={handleSubmit(onSubmitPassword)} className="space-y-4">
+            <div className="grid w-full max-w-sm items-center gap-1.5">
+              <Label htmlFor="oldPassword">Old Password</Label>
+              <Input type="password" id="oldPassword" {...register('oldPassword')} />
+              {errors.oldPassword && <p className="text-sm text-red-500">{errors.oldPassword.message}</p>}
+            </div>
+            <div className="grid w-full max-w-sm items-center gap-1.5">
+              <Label htmlFor="newPassword">New Password</Label>
+              <Input type="password" id="newPassword" {...register('newPassword')} />
+              {errors.newPassword && <p className="text-sm text-red-500">{errors.newPassword.message}</p>}
+            </div>
+            <div className="grid w-full max-w-sm items-center gap-1.5">
+              <Label htmlFor="confirmPassword">Confirm New Password</Label>
+              <Input type="password" id="confirmPassword" {...register('confirmPassword')} />
+              {errors.confirmPassword && <p className="text-sm text-red-500">{errors.confirmPassword.message}</p>}
+            </div>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Changing...' : 'Change Password'}
+            </Button>
+          </form>
+        </div>
+
+        {/* Notification Settings (Placeholder) */}
         <div className="bg-white p-6 rounded-lg shadow-md dark:bg-gray-800">
           <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Notifications</h3>
           <div className="space-y-4">
