@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
-import { Home, BarChart2, Settings, Users, Folder, X } from 'lucide-react';
+import { Home, BarChart2, Settings, Users, Folder, X, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/use-auth';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -11,11 +12,23 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
+  const { currentUser, loading } = useAuth();
+
+  const getTwoWordsFullName = (fullName: string | undefined | null) => {
+    if (!fullName) return 'User';
+    const words = fullName.split(' ').filter(Boolean); // Filter(Boolean) removes empty strings
+    if (words.length >= 2) {
+      return `${words[0]} ${words[1]}`;
+    }
+    return words[0] || 'User';
+  };
+
   const menuItems = [
     { name: 'Dashboard', icon: Home, path: '/dashboard' },
     { name: 'Analytics', icon: BarChart2, path: '/dashboard/analytics' },
     { name: 'Projects', icon: Folder, path: '/dashboard/projects' },
     { name: 'Team', icon: Users, path: '/dashboard/team' },
+    { name: 'Job Input', icon: FileText, path: '/dashboard/job-input' }, // New item
     { name: 'Settings', icon: Settings, path: '/dashboard/settings' },
   ];
 
@@ -42,6 +55,36 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
             <X className="h-6 w-6" />
           </button>
         </div>
+
+        {/* Profile Preview Section */}
+        <div className="p-4 border-b border-gray-700">
+          {loading ? (
+            <div className="flex items-center space-x-3 animate-pulse">
+              <div className="h-10 w-10 rounded-full bg-gray-700"></div>
+              <div className="h-4 w-24 bg-gray-700 rounded"></div>
+            </div>
+          ) : currentUser ? (
+            <Link
+              href="/dashboard/profile"
+              className="flex items-center space-x-3 hover:bg-gray-700 p-2 rounded-md transition-colors"
+              onClick={() => setIsOpen(false)}
+            >
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={currentUser.user_metadata?.avatar_url || ''} alt={currentUser.email || 'User'} />
+                <AvatarFallback>{currentUser.email ? currentUser.email[0].toUpperCase() : 'U'}</AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="text-sm font-medium text-white">
+                  {getTwoWordsFullName(currentUser.user_metadata?.full_name)}
+                </p>
+                <p className="text-xs text-gray-400">View Profile</p>
+              </div>
+            </Link>
+          ) : (
+            <div className="text-sm text-gray-400">Not logged in</div>
+          )}
+        </div>
+
         <nav className="flex-1 px-2 py-4 space-y-2">
           {menuItems.map((item) => (
             <Link

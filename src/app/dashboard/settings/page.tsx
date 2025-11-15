@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -13,6 +13,12 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 
+// Schema for profile update form
+const profileFormSchema = z.object({
+  fullname: z.string().min(3, { message: 'Full name must be at least 3 characters.' }),
+});
+type ProfileFormValues = z.infer<typeof profileFormSchema>;
+
 // Schema for password change form
 const passwordFormSchema = z
   .object({
@@ -22,54 +28,94 @@ const passwordFormSchema = z
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
     message: "New passwords don't match.",
-    path: ['confirmPassword'], // Point error to the confirmation field
+    path: ['confirmPassword'],
   });
-
 type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 
 const SettingsPage = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const supabase = createClient();
 
+  // Form for Profile Update
   const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    reset,
+    register: registerProfile,
+    handleSubmit: handleSubmitProfile,
+    formState: { errors: profileErrors, isSubmitting: isSubmittingProfile },
+    reset: resetProfileForm,
+  } = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileFormSchema),
+  });
+
+  // Form for Password Change
+  const {
+    register: registerPassword,
+    handleSubmit: handleSubmitPassword,
+    formState: { errors: passwordErrors, isSubmitting: isSubmittingPassword },
+    reset: resetPasswordForm,
   } = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordFormSchema),
   });
+
+  // Fetch profile data to populate form
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (currentUser) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('fullname')
+          .eq('id', currentUser.id)
+          .single();
+        if (data) {
+          resetProfileForm({ fullname: data.fullname });
+        }
+      }
+    };
+    fetchProfile();
+  }, [currentUser, supabase, resetProfileForm]);
+
+
+  const onSubmitProfile = async (data: ProfileFormValues) => {
+    if (!currentUser) return;
+    const { error } = await supabase
+      .from('profiles')
+      .update({ fullname: data.fullname })
+      .eq('id', currentUser.id);
+
+    if (error) {
+      toast({ title: 'Error', description: `Failed to update profile: ${error.message}`, variant: 'destructive' });
+    } else {
+      toast({ title: 'Success', description: 'Your profile has been updated.' });
+    }
+  };
 
   const onSubmitPassword = async (data: PasswordFormValues) => {
     if (!currentUser?.email) {
       toast({ title: 'Error', description: 'Could not find user email.', variant: 'destructive' });
       return;
     }
-
-    // 1. Verify old password by trying to sign in
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email: currentUser.email,
       password: data.oldPassword,
     });
-
     if (signInError) {
       toast({ title: 'Error', description: 'Incorrect old password.', variant: 'destructive' });
       return;
     }
-
-    // 2. If old password is correct, update to the new password
     const { error: updateError } = await supabase.auth.updateUser({
       password: data.newPassword,
     });
-
     if (updateError) {
       toast({ title: 'Error', description: `Failed to update password: ${updateError.message}`, variant: 'destructive' });
     } else {
       toast({ title: 'Success', description: 'Your password has been updated successfully.' });
-      reset(); // Clear the form
+      resetPasswordForm();
     }
   };
+
+  if (authLoading) {
+    return <div>Loading settings...</div>;
+  }
 
   return (
     <div>
@@ -83,43 +129,42 @@ const SettingsPage = () => {
       </header>
       
       <div className="grid gap-8">
-        {/* Profile Settings (Placeholder) */}
+        {/* Profile Settings */}
         <div className="bg-white p-6 rounded-lg shadow-md dark:bg-gray-800">
           <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Profile</h3>
-          <div className="space-y-4">
+          <form onSubmit={handleSubmitProfile(onSubmitProfile)} className="space-y-4">
             <div className="grid w-full max-w-sm items-center gap-1.5">
-              <Label htmlFor="name">Full Name</Label>
-              <Input type="text" id="name" placeholder="Your Name" disabled />
+              <Label htmlFor="fullname">Full Name</Label>
+              <Input type="text" id="fullname" {...registerProfile('fullname')} />
+              {profileErrors.fullname && <p className="text-sm text-red-500">{profileErrors.fullname.message}</p>}
             </div>
-            <div className="grid w-full max-w-sm items-center gap-1.5">
-              <Label htmlFor="email">Email</Label>
-              <Input type="email" id="email" placeholder="Your Email" disabled />
-            </div>
-            <Button disabled>Update Profile</Button>
-          </div>
+            <Button type="submit" disabled={isSubmittingProfile}>
+              {isSubmittingProfile ? 'Updating...' : 'Update Profile'}
+            </Button>
+          </form>
         </div>
 
         {/* Change Password */}
         <div className="bg-white p-6 rounded-lg shadow-md dark:bg-gray-800">
           <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Change Password</h3>
-          <form onSubmit={handleSubmit(onSubmitPassword)} className="space-y-4">
+          <form onSubmit={handleSubmitPassword(onSubmitPassword)} className="space-y-4">
             <div className="grid w-full max-w-sm items-center gap-1.5">
               <Label htmlFor="oldPassword">Old Password</Label>
-              <Input type="password" id="oldPassword" {...register('oldPassword')} />
-              {errors.oldPassword && <p className="text-sm text-red-500">{errors.oldPassword.message}</p>}
+              <Input type="password" id="oldPassword" {...registerPassword('oldPassword')} />
+              {passwordErrors.oldPassword && <p className="text-sm text-red-500">{passwordErrors.oldPassword.message}</p>}
             </div>
             <div className="grid w-full max-w-sm items-center gap-1.5">
               <Label htmlFor="newPassword">New Password</Label>
-              <Input type="password" id="newPassword" {...register('newPassword')} />
-              {errors.newPassword && <p className="text-sm text-red-500">{errors.newPassword.message}</p>}
+              <Input type="password" id="newPassword" {...registerPassword('newPassword')} />
+              {passwordErrors.newPassword && <p className="text-sm text-red-500">{passwordErrors.newPassword.message}</p>}
             </div>
             <div className="grid w-full max-w-sm items-center gap-1.5">
               <Label htmlFor="confirmPassword">Confirm New Password</Label>
-              <Input type="password" id="confirmPassword" {...register('confirmPassword')} />
-              {errors.confirmPassword && <p className="text-sm text-red-500">{errors.confirmPassword.message}</p>}
+              <Input type="password" id="confirmPassword" {...registerPassword('confirmPassword')} />
+              {passwordErrors.confirmPassword && <p className="text-sm text-red-500">{passwordErrors.confirmPassword.message}</p>}
             </div>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Changing...' : 'Change Password'}
+            <Button type="submit" disabled={isSubmittingPassword}>
+              {isSubmittingPassword ? 'Changing...' : 'Change Password'}
             </Button>
           </form>
         </div>

@@ -15,7 +15,7 @@ export default function DashboardLayout({
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
-      <main className="flex-1 overflow-y-auto relative">
+      <main className="flex-1 overflow-y-auto relative dark:text-foreground">
         {/* Header for mobile and user profile */}
         <header className="sticky top-0 z-20 bg-white dark:bg-gray-800 shadow-sm md:hidden">
             <div className="flex items-center justify-between p-4">

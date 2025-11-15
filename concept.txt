@@ -1,0 +1,38 @@
+Form Input Job
+
+Job Type:
+
+Instalasi
+
+Troubleshoot
+
+Replace Modem / ONT
+
+Terminate Modem / ONT
+
+Survei
+
+Customer Handling / Support
+
+Maintenance
+
+Re-Aktivasi Modem / ONT
+
+
+
+
+Sub-parameter:
+
+Customer Name
+
+Type Modem/ONT
+
+Serial Number (SN masked default)
+
+Power R/X
+
+PPPOE Username & Password
+
+Default & new SSID + WLAN Key
+
+Reason

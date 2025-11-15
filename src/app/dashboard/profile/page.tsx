@@ -25,6 +25,7 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null); // State for preview
 
   const supabase = createClient();
   const router = useRouter();
@@ -49,12 +50,29 @@ const ProfilePage = () => {
         router.push('/dashboard');
       } else {
         setProfile(data);
+        // Update currentUser's user_metadata with the fullname from the profiles table
+        await supabase.auth.updateUser({
+          data: { full_name: data.fullname },
+        });
       }
       setLoading(false);
     };
 
     fetchProfile();
   }, [currentUser, authLoading, router, supabase, toast]);
+
+  // Effect to handle preview URL and cleanup
+  useEffect(() => {
+    if (!avatarFile) {
+      setPreviewUrl(null);
+      return;
+    }
+    const objectUrl = URL.createObjectURL(avatarFile);
+    setPreviewUrl(objectUrl);
+
+    // Cleanup function to revoke the object URL
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [avatarFile]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
@@ -69,7 +87,6 @@ const ProfilePage = () => {
     const fileExt = avatarFile.name.split('.').pop();
     const filePath = `${currentUser.id}-${Date.now()}.${fileExt}`;
 
-    // Upload file to Supabase Storage
     const { error: uploadError } = await supabase.storage
       .from('avatars')
       .upload(filePath, avatarFile);
@@ -80,7 +97,6 @@ const ProfilePage = () => {
       return;
     }
 
-    // Get public URL of the uploaded file
     const { data: publicUrlData } = supabase.storage
       .from('avatars')
       .getPublicUrl(filePath);
@@ -92,12 +108,10 @@ const ProfilePage = () => {
     }
     const publicURL = publicUrlData.publicUrl;
 
-    // Update avatar_url in the user's auth metadata
     const { error: userUpdateError } = await supabase.auth.updateUser({
         data: { avatar_url: publicURL },
     });
 
-    // Update avatar_url in the public profiles table
     const { error: profileUpdateError } = await supabase
       .from('profiles')
       .update({ avatar_url: publicURL })
@@ -107,7 +121,6 @@ const ProfilePage = () => {
         toast({ title: 'Error', description: 'Failed to update avatar URL.', variant: 'destructive' });
     } else {
         toast({ title: 'Success', description: 'Profile picture updated!' });
-        // Refresh profile data
         setProfile(prev => prev ? { ...prev, avatar_url: publicURL } : null);
     }
     
@@ -148,11 +161,10 @@ const ProfilePage = () => {
       </header>
 
       <div className="grid gap-8 md:grid-cols-3">
-        {/* Left column for avatar */}
         <div className="md:col-span-1">
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center">
             <Avatar className="w-32 h-32 mx-auto mb-4">
-              <AvatarImage src={profile.avatar_url} />
+              <AvatarImage src={previewUrl || profile.avatar_url} />
               <AvatarFallback className="text-4xl">
                 {getInitials(profile.fullname) || getInitials(profile.username)}
               </AvatarFallback>
@@ -177,7 +189,6 @@ const ProfilePage = () => {
           </div>
         </div>
 
-        {/* Right column for details */}
         <div className="md:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
             <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-6">Personal Information</h3>
             <div className="space-y-4">
