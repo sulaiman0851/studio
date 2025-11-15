@@ -1,5 +1,6 @@
 'use client';
 
+import React, { useState, useEffect } from 'react';
 import { getJobCounts, getDailyActiveUsers } from '@/lib/metrics';
 import { createClient } from '@/lib/supabase/client'; // Import Supabase client
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
