@@ -48,7 +48,8 @@ export async function getWeeklyActiveUsers(): Promise<number> {
 
   const { data, error } = await supabase
     .from('job_entries')
-    .select('user_id', { distinct: true })
+    .select('user_id')
+    .distinct()
     .gte('created_at', oneWeekAgo.toISOString());
 
   if (error) {
