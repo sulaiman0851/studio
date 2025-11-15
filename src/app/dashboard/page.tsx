@@ -19,7 +19,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
              <p>Pilih menu dari sidebar untuk memulai.</p>
-          </CardContent>
+          </Content>
         </Card>
     </div>
   );
