@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, Settings } from 'lucide-react';
+import { LogOut, Settings, User } from 'lucide-react';
 
 export function UserProfileDropdown() {
   const { currentUser, loading } = useAuth();
@@ -43,7 +43,7 @@ export function UserProfileDropdown() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button className="focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-full">
-          <Avatar style={{ backgroundColor: 'pink' }}>
+          <Avatar>
             <AvatarImage src={currentUser?.user_metadata?.avatar_url || "https://i.pravatar.cc/150?img=68"} />
             <AvatarFallback>
               {getInitials(currentUser?.email)}
@@ -59,6 +59,12 @@ export function UserProfileDropdown() {
           </p>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href="/profile">
+            <User className="mr-2 h-4 w-4" />
+            <span>My Profile</span>
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href="/dashboard/settings">
             <Settings className="mr-2 h-4 w-4" />
