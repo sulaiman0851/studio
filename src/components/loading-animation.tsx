@@ -1,15 +1,13 @@
+import React from 'react';
 
-'use client';
-
-import { Loader2 } from 'lucide-react';
-
-export default function LoadingAnimation() {
+const LoadingAnimation = () => {
   return (
-    <div className="flex h-screen w-full items-center justify-center bg-background">
-      <div className="flex flex-col items-center gap-4">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="text-lg text-muted-foreground">Biznet | NOA</p>
+    <div className="flex h-screen w-full items-center justify-center bg-white dark:bg-gray-900">
+      <div className="animate-pulse text-2xl font-bold text-gray-800 dark:text-white">
+        Biznet | NOA
       </div>
     </div>
   );
-}
+};
+
+export default LoadingAnimation;
