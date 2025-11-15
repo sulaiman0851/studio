@@ -1,7 +1,74 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import { RevenueChart, UsersChart } from '@/components/charts';
+import { getJobCounts, getWeeklyActiveUsers } from '@/lib/metrics';
+import { createClient } from '@/lib/supabase/client'; // Import Supabase client
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+
+type JobEntry = {
+  id: string;
+  created_at: string;
+  job_type: string;
+  customer_name: string;
+  profiles: {
+    fullname: string;
+  } | null;
+};
 
 const DashboardPage = () => {
+  const supabase = createClient(); // Initialize Supabase client
+  const [monthlyJobs, setMonthlyJobs] = useState<number | null>(null);
+  const [weeklyJobs, setWeeklyJobs] = useState<number | null>(null);
+  const [dailyJobs, setDailyJobs] = useState<number | null>(null);
+  const [weeklyActiveUsers, setWeeklyActiveUsers] = useState<number | null>(null);
+  const [loadingMetrics, setLoadingMetrics] = useState(true);
+
+  const [recentActivities, setRecentActivities] = useState<JobEntry[]>([]);
+  const [loadingActivities, setLoadingActivities] = useState(true);
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      setLoadingMetrics(true);
+      const [
+        monthlyCount,
+        weeklyCount,
+        dailyCount,
+        activeUsersCount,
+      ] = await Promise.all([
+        getJobCounts('month'),
+        getJobCounts('week'),
+        getJobCounts('day'),
+        getWeeklyActiveUsers(),
+      ]);
+
+      setMonthlyJobs(monthlyCount);
+      setWeeklyJobs(weeklyCount);
+      setDailyJobs(dailyCount);
+      setWeeklyActiveUsers(activeUsersCount);
+      setLoadingMetrics(false);
+    };
+
+    const fetchRecentActivities = async () => {
+      setLoadingActivities(true);
+      const { data, error } = await supabase
+        .from('job_entries')
+        .select('*, profiles(fullname)') // Select job details and join with profiles to get fullname
+        .order('created_at', { ascending: false })
+        .limit(5); // Fetch last 5 activities
+
+      if (error) {
+        console.error('Error fetching recent activities:', error.message);
+      } else {
+        setRecentActivities(data as JobEntry[]);
+      }
+      setLoadingActivities(false);
+    };
+
+    fetchMetrics();
+    fetchRecentActivities();
+  }, []);
+
   return (
     <div>
       <header className="mb-8">
@@ -13,20 +80,127 @@ const DashboardPage = () => {
         </p>
       </header>
 
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Monthly Jobs</CardTitle>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              className="h-4 w-4 text-muted-foreground"
+            >
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {loadingMetrics ? '...' : monthlyJobs}
+            </div>
+            <p className="text-xs text-muted-foreground">Total jobs this month</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Weekly Jobs</CardTitle>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              className="h-4 w-4 text-muted-foreground"
+            >
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {loadingMetrics ? '...' : weeklyJobs}
+            </div>
+            <p className="text-xs text-muted-foreground">Total jobs this week</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Daily Jobs</CardTitle>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              className="h-4 w-4 text-muted-foreground"
+            >
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {loadingMetrics ? '...' : dailyJobs}
+            </div>
+            <p className="text-xs text-muted-foreground">Total jobs today</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Weekly Active Users</CardTitle>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              className="h-4 w-4 text-muted-foreground"
+            >
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {loadingMetrics ? '...' : weeklyActiveUsers}
+            </div>
+            <p className="text-xs text-muted-foreground">Users submitting jobs this week</p>
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <RevenueChart />
         <UsersChart />
       </div>
 
-      {/* You can add more components here */}
+      {/* Recent Activity Section */}
       <div className="mt-8 bg-white p-6 rounded-lg shadow-md dark:bg-gray-800">
         <h3 className="text-xl font-semibold text-gray-800 dark:text-white">Recent Activity</h3>
-        <p className="text-gray-600 dark:text-gray-300 mt-2">
-          - Technician John Doe completed a job.
-        </p>
-        <p className="text-gray-600 dark:text-gray-300 mt-1">
-          - New work order #1234 created.
-        </p>
+        {loadingActivities ? (
+          <p className="text-gray-600 dark:text-gray-300 mt-2">Loading activities...</p>
+        ) : recentActivities.length > 0 ? (
+          <div className="mt-4 space-y-3">
+            {recentActivities.map((activity) => (
+              <p key={activity.id} className="text-gray-600 dark:text-gray-300">
+                - {activity.profiles?.fullname || 'Unknown User'} submitted a '{activity.job_type}' job for '{activity.customer_name}' on {new Date(activity.created_at).toLocaleString()}.
+              </p>
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-600 dark:text-gray-300 mt-2">No recent activities.</p>
+        )}
       </div>
     </div>
   );

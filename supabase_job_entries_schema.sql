@@ -1,7 +1,7 @@
 CREATE TABLE job_entries (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
   job_type TEXT NOT NULL,
   customer_name TEXT,
   type_modem_ont TEXT,
