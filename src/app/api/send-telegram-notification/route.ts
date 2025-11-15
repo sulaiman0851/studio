@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/client'; // Using client for simplicity, ideally use server client
+import { createAdminClient } from '@/lib/supabase/server'; // Import createAdminClient
 
 export async function POST(request: Request) {
-  const supabase = createClient(); // Using client-side Supabase client
+  const supabase = createAdminClient(); // Use admin client
 
   try {
     const { jobDetails } = await request.json();

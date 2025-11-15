@@ -102,12 +102,14 @@ const JobInputPage = () => {
           body: JSON.stringify({ jobDetails: formData }),
         });
 
+        const telegramResponseData = await telegramResponse.json(); // Parse response
+
         if (!telegramResponse.ok) {
           console.error('Failed to send Telegram notification via API route.');
           toast({
             title: 'Warning',
             description: 'Job submitted, but Telegram notification failed.',
-            variant: 'destructive', // Changed to destructive as it's a failure
+            variant: 'destructive',
           });
         } else {
           toast({
@@ -294,6 +296,8 @@ const JobInputPage = () => {
           </form>
         </CardContent>
       </Card>
+
+
     </div>
   );
 };
