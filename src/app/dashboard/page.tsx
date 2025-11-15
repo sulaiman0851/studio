@@ -5,6 +5,7 @@ import { RevenueChart, UsersChart } from '@/components/charts';
 import { getJobCounts, getWeeklyActiveUsers } from '@/lib/metrics';
 import { createClient } from '@/lib/supabase/client'; // Import Supabase client
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { useAuth } from '@/hooks/use-auth'; // Import useAuth
 
 type JobEntry = {
   id: string;
@@ -18,6 +19,7 @@ type JobEntry = {
 
 const DashboardPage = () => {
   const supabase = createClient(); // Initialize Supabase client
+  const { currentUser } = useAuth(); // Get currentUser
   const [monthlyJobs, setMonthlyJobs] = useState<number | null>(null);
   const [weeklyJobs, setWeeklyJobs] = useState<number | null>(null);
   const [dailyJobs, setDailyJobs] = useState<number | null>(null);
@@ -26,6 +28,23 @@ const DashboardPage = () => {
 
   const [recentActivities, setRecentActivities] = useState<JobEntry[]>([]);
   const [loadingActivities, setLoadingActivities] = useState(true);
+
+  // Helper function to get time-based greeting
+  const getTimeBasedGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 18) return 'Good Afternoon';
+    return 'Good Evening';
+  };
+
+  // Extract first name
+  const getFirstName = (fullName: string | undefined | null) => {
+    if (!fullName) return '';
+    return fullName.split(' ')[0];
+  };
+
+  const userFirstName = getFirstName(currentUser?.user_metadata?.full_name);
+  const greeting = getTimeBasedGreeting();
 
   useEffect(() => {
     const fetchMetrics = async () => {
@@ -76,7 +95,7 @@ const DashboardPage = () => {
           Dashboard Overview
         </h1>
         <p className="text-lg text-gray-500 dark:text-gray-400 mt-2">
-          Welcome back! Here's a summary of your operations.
+          {`Welcome back ${userFirstName || ''}, ${greeting}! Here's a summary of your operations.`}
         </p>
       </header>
 
