@@ -9,19 +9,54 @@ export function useAuth() {
   const supabase = createClient();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [role, setRole] = useState<string | null>(null); // Add role state
 
   useEffect(() => {
-    const getUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      setCurrentUser(data.user);
+    const getUserAndRole = async () => {
+      setLoading(true);
+      const { data: userData } = await supabase.auth.getUser();
+      setCurrentUser(userData.user);
+
+      if (userData.user) {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', userData.user.id)
+          .single();
+
+        if (profileError) {
+          console.error('Error fetching profile role:', profileError.message);
+          setRole(null);
+        } else {
+          setRole(profileData.role);
+        }
+      } else {
+        setRole(null);
+      }
       setLoading(false);
     };
 
-    getUser();
+    getUserAndRole();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setCurrentUser(session?.user ?? null);
+        if (session?.user) {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profileError) {
+            console.error('Error fetching profile role on auth change:', profileError.message);
+            setRole(null);
+          } else {
+            setRole(profileData.role);
+          }
+        } else {
+          setRole(null);
+        }
       }
     );
 
@@ -30,5 +65,5 @@ export function useAuth() {
     };
   }, []);
 
-  return { currentUser, loading };
+  return { currentUser, loading, role };
 }

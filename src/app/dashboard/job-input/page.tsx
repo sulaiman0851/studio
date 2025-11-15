@@ -91,6 +91,39 @@ const JobInputPage = () => {
         title: 'Success',
         description: 'Job entry submitted successfully!',
       });
+
+      // Send Telegram notification
+      try {
+        const telegramResponse = await fetch('/api/send-telegram-notification', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ jobDetails: formData }),
+        });
+
+        if (!telegramResponse.ok) {
+          console.error('Failed to send Telegram notification via API route.');
+          toast({
+            title: 'Warning',
+            description: 'Job submitted, but Telegram notification failed.',
+            variant: 'destructive', // Changed to destructive as it's a failure
+          });
+        } else {
+          toast({
+            title: 'Notification Sent',
+            description: 'Telegram notification sent successfully!',
+          });
+        }
+      } catch (telegramError) {
+        console.error('Error sending Telegram notification:', telegramError);
+        toast({
+          title: 'Warning',
+          description: 'Job submitted, but an error occurred while sending Telegram notification.',
+          variant: 'destructive', // Changed to destructive as it's an error
+        });
+      }
+
       // Clear form fields
       setJobType('');
       setCustomerName('');
