@@ -10,6 +10,9 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "FieldOps",
   description: "Aplikasi manajemen pekerjaan untuk teknisi lapangan.",
+  icons: {
+    icon: '/favicon.svg',
+  },
   openGraph: {
     title: 'FieldOps',
     description: 'Aplikasi manajemen pekerjaan untuk teknisi lapangan.',
