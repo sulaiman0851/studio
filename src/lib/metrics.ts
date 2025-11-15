@@ -39,20 +39,20 @@ export async function getJobCounts(timeframe: 'month' | 'week' | 'day'): Promise
 }
 
 /**
- * Fetches the count of unique users who submitted job entries in the last week.
- * @returns The count of weekly active users.
+ * Fetches the count of unique users who submitted job entries in the current day.
+ * @returns The count of daily active users.
  */
-export async function getWeeklyActiveUsers(): Promise<number> {
+export async function getDailyActiveUsers(): Promise<number> {
   const now = new Date();
-  const oneWeekAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Start of the current day
 
   const { data, error } = await supabase
     .from('job_entries')
     .select('distinct user_id')
-    .gte('created_at', oneWeekAgo.toISOString());
+    .gte('created_at', startOfDay.toISOString());
 
   if (error) {
-    console.error('Error fetching weekly active users:', error.message);
+    console.error('Error fetching daily active users:', error.message);
     return 0;
   }
 

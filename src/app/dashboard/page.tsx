@@ -1,8 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { RevenueChart, UsersChart } from '@/components/charts';
-import { getJobCounts, getWeeklyActiveUsers } from '@/lib/metrics';
+import { getJobCounts, getDailyActiveUsers } from '@/lib/metrics';
 import { createClient } from '@/lib/supabase/client'; // Import Supabase client
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/hooks/use-auth'; // Import useAuth
@@ -23,7 +21,7 @@ const DashboardPage = () => {
   const [monthlyJobs, setMonthlyJobs] = useState<number | null>(null);
   const [weeklyJobs, setWeeklyJobs] = useState<number | null>(null);
   const [dailyJobs, setDailyJobs] = useState<number | null>(null);
-  const [weeklyActiveUsers, setWeeklyActiveUsers] = useState<number | null>(null);
+  const [dailyActiveUsers, setDailyActiveUsers] = useState<number | null>(null); // Changed from weeklyActiveUsers
   const [loadingMetrics, setLoadingMetrics] = useState(true);
 
   const [recentActivities, setRecentActivities] = useState<JobEntry[]>([]);
@@ -58,13 +56,13 @@ const DashboardPage = () => {
         getJobCounts('month'),
         getJobCounts('week'),
         getJobCounts('day'),
-        getWeeklyActiveUsers(),
+        getDailyActiveUsers(), // Changed from getWeeklyActiveUsers
       ]);
 
       setMonthlyJobs(monthlyCount);
       setWeeklyJobs(weeklyCount);
       setDailyJobs(dailyCount);
-      setWeeklyActiveUsers(activeUsersCount);
+      setDailyActiveUsers(activeUsersCount); // Changed from setWeeklyActiveUsers
       setLoadingMetrics(false);
     };
 
@@ -174,7 +172,7 @@ const DashboardPage = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Weekly Active Users</CardTitle>
+            <CardTitle className="text-sm font-medium">Daily Active Users</CardTitle>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -192,9 +190,9 @@ const DashboardPage = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {loadingMetrics ? '...' : weeklyActiveUsers}
+              {loadingMetrics ? '...' : dailyActiveUsers}
             </div>
-            <p className="text-xs text-muted-foreground">Users submitting jobs this week</p>
+            <p className="text-xs text-muted-foreground">Users submitting jobs today</p>
           </CardContent>
         </Card>
       </div>
