@@ -5,15 +5,27 @@ import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(req: NextRequest) {
   const supabase = createRouteHandlerClient({ cookies });
-  const { data: { user } } = await supabase.auth.getUser();
+
+  // Log all cookies received by the route handler
+  const allCookies = cookies().getAll();
+  console.log('API Route: Received cookies:', allCookies);
+
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError) {
+    console.error('API Route: Supabase auth error:', authError);
+  }
+  console.log('API Route: Supabase user:', user);
 
   if (!user) {
+    console.log('API Route: User not found, returning Unauthorized.');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const { image, latitude, longitude } = await req.json();
 
   if (!image || latitude === undefined || longitude === undefined) {
+    console.log('API Route: Missing required fields.');
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
@@ -32,7 +44,7 @@ export async function POST(req: NextRequest) {
       });
 
     if (uploadError) {
-      console.error('Storage Upload Error:', uploadError);
+      console.error('API Route: Storage Upload Error:', uploadError);
       return NextResponse.json({ error: 'Failed to upload image.' }, { status: 500 });
     }
 
@@ -52,13 +64,14 @@ export async function POST(req: NextRequest) {
       });
 
     if (dbError) {
-      console.error('Database Insert Error:', dbError);
+      console.error('API Route: Database Insert Error:', dbError);
       return NextResponse.json({ error: 'Failed to save photo metadata.' }, { status: 500 });
     }
 
+    console.log('API Route: Photo uploaded successfully.');
     return NextResponse.json({ success: true, url: publicUrl });
   } catch (error) {
-    console.error('Upload processing error:', error);
+    console.error('API Route: Upload processing error:', error);
     return NextResponse.json({ error: 'Internal server error.' }, { status: 500 });
   }
 }
