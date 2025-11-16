@@ -1,8 +1,13 @@
-Initiating connection...
-Socket created. Waiting for connection update.
-Not registered. Requesting pairing code.
-Connection update: {"connection":"connecting","receivedPendingNotifications":false}
-Connection update: {"connection":"close","lastDisconnect":{"error":{},"date":"2025-11-16T12:41:34.195Z"}}
-Connection closed. Status code: undefined.
-Client can reconnect.
-Error requesting pairing code: TypeError: Cannot read properties of undefined (reading 'public')
+Failed to compile.
+./src/app/api/geotag/upload/route.ts:4:30
+Type error: Could not find a declaration file for module 'uuid'. '/vercel/path0/node_modules/uuid/dist/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/uuid` if it exists or add a new declaration (.d.ts) file containing `declare module 'uuid';`
+  2 | import { cookies } from 'next/headers';
+  3 | import { NextRequest, NextResponse } from 'next/server';
+> 4 | import { v4 as uuidv4 } from 'uuid';
+    |                              ^
+  5 |
+  6 | export async function POST(req: NextRequest) {
+  7 |   const supabase = createRouteHandlerClient({ cookies });
+Next.js build worker exited with code: 1 and signal: null
+Error: Command "npm run build" exited with 1
