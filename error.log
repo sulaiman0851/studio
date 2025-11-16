@@ -1,12 +1,12 @@
 Failed to compile.
-./src/app/dashboard/admin/whatsapp-bot/page.tsx:223:22
-Type error: JSX element type 'QRCode' does not have any construct or call signatures.
-  221 |                 {qrCode && (
-  222 |                   <div className="mt-4 p-4 bg-white rounded-md flex justify-center">
-> 223 |                     <QRCode value={qrCode} />
-      |                      ^
-  224 |                   </div>
-  225 |                 )}
-  226 |                 {sessionStatus === 'connecting' && !qrCode && (
+./src/lib/supabase-auth-state.ts:16:5
+Type error: Object literal may only specify known properties, and 'appStateSyncKey' does not exist in type '{ readonly signedIdentityKey: string; readonly signedPreKey: string; readonly registrationId: string; readonly noiseKey: string; readonly pairingEphemeralKeyPair: string; advSecretKey: string; ... 14 more ...; routingInfo: string; }'.
+  14 |     accountSyncCounter: 'account-sync-counter',
+  15 |     accountSettings: 'account-settings',
+> 16 |     appStateSyncKey: 'app-state-sync-key',
+     |     ^
+  17 |     processedHistoryMessages: 'processed-history-messages',
+  18 |     myAppStateKeyId: 'my-app-state-key-id',
+  19 |     lastAccountSyncTimestamp: 'last-account-sync-timestamp',
 Next.js build worker exited with code: 1 and signal: null
 Error: Command "npm run build" exited with 1

@@ -13,7 +13,7 @@ const KEY_MAP: { [T in keyof AuthenticationState['creds']]: string } = {
     firstUnuploadedPreKeyId: 'first-unuploaded-pre-key-id',
     accountSyncCounter: 'account-sync-counter',
     accountSettings: 'account-settings',
-    appStateSyncKey: 'app-state-sync-key',
+    // appStateSyncKey: 'app-state-sync-key',
     processedHistoryMessages: 'processed-history-messages',
     myAppStateKeyId: 'my-app-state-key-id',
     lastAccountSyncTimestamp: 'last-account-sync-timestamp',
