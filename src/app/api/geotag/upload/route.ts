@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   const supabase = createRouteHandlerClient({ cookies });
 
   // Log all cookies received by the route handler
-  const allCookies = cookies().getAll();
+  const allCookies = (await cookies()).getAll();
   console.log('API Route: Received cookies:', allCookies);
 
   const { data: { user }, error: authError } = await supabase.auth.getUser();
