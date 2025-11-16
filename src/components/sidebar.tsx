@@ -1,6 +1,6 @@
 'use client';
 
-import { Home, BarChart2, Settings, Users, Folder, X, FileText } from 'lucide-react';
+import { Home, BarChart2, Settings, Users, Folder, X, FileText, Camera } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
@@ -30,6 +30,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
     { name: 'Team', icon: Users, path: '/dashboard/team' },
     { name: 'Job Input', icon: FileText, path: '/dashboard/job-input' },
     { name: 'Settings', icon: Settings, path: '/dashboard/settings' },
+    { name: 'Geotag Photo', icon: Camera, path: '/dashboard/geotag' },
   ];
 
   return (
@@ -111,6 +112,14 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
               >
                 <Settings className="w-5 h-5 mr-3" /> {/* Reusing Settings icon for now */}
                 Telegram Config
+              </Link>
+              <Link
+                href="/dashboard/admin/whatsapp-bot"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center px-4 py-2 text-gray-300 rounded-md hover:bg-gray-700 hover:text-white transition-colors"
+              >
+                <Settings className="w-5 h-5 mr-3" /> {/* Reusing Settings icon for now */}
+                WhatsApp Bot
               </Link>
             </>
           )}

@@ -1,25 +1,8 @@
-Build Error
-
-Error:   x You're importing a component that needs `useState`. This React hook only works in a client component. To fix, mark the file (or its parent) with the `"use client"` directive.
-
-./src/app/dashboard/page.tsx
-
-Error:   x You're importing a component that needs `useState`. This React hook only works in a client component. To fix, mark the file (or its parent) with the `"use client"` directive.
-  |
-  |  Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
-  |
-
-   ,-[/home/user/studio/src/app/dashboard/page.tsx:1:1]
- 1 | import React, { useState, useEffect } from 'react';
-   :                 ^^^^^^^^
- 2 | import { RevenueChart, UsersChart } from '@/components/charts';
- 3 | import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
- 4 | import { getJobCounts, getWeeklyActiveUsers } from '@/lib/metrics';
-   `----
-  x You're importing a component that needs `useEffect`. This React hook only works in a client component. To fix, mark the file (or its parent) with the `"use client"` directive.
-  |
-  |  Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
-  |
-
-   ,-[/home/user/studio/src/app/dashboard/page.tsx:1:1]
- 1 | import React, { useState, useEffect } from 'react';
+Initiating connection...
+Socket created. Waiting for connection update.
+Not registered. Requesting pairing code.
+Connection update: {"connection":"connecting","receivedPendingNotifications":false}
+Connection update: {"connection":"close","lastDisconnect":{"error":{},"date":"2025-11-16T12:41:34.195Z"}}
+Connection closed. Status code: undefined.
+Client can reconnect.
+Error requesting pairing code: TypeError: Cannot read properties of undefined (reading 'public')
