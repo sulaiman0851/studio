@@ -26,6 +26,8 @@ const GeotagPage = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [isLoadingGallery, setIsLoadingGallery] = useState(true);
 
+  console.log('GeotagPage Auth State: authLoading =', authLoading, 'currentUser =', currentUser);
+
   // Get camera and location permissions
   useEffect(() => {
     const getPermissions = async () => {
