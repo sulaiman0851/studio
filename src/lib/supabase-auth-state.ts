@@ -21,6 +21,10 @@ const KEY_MAP: { [T in keyof AuthenticationState['creds']]: string } = {
     signalIdentities: 'signal-identities',
     me: 'me',
     registered: 'registered',
+    pairingEphemeralKeyPair: 'pairing-ephemeral-key-pair',
+    pairingCode: 'pairing-code',
+    lastPropHash: 'last-prop-hash',
+    routingInfo: 'routing-info',
 };
 
 
@@ -116,6 +120,10 @@ export const useSupabaseAuthState = async (phoneNumber: string): Promise<{ state
             me: { id: '', name: '' },
             processedHistoryMessages: [],
             registered: false,
+            pairingEphemeralKeyPair: { private: Buffer.alloc(32), public: Buffer.alloc(32) },
+            pairingCode: '',
+            lastPropHash: '',
+            routingInfo: '',
         };
         keys = {};
     }

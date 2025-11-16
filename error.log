@@ -1,12 +1,12 @@
 Failed to compile.
-./src/lib/supabase-auth-state.ts:16:5
-Type error: Object literal may only specify known properties, and 'appStateSyncKey' does not exist in type '{ readonly signedIdentityKey: string; readonly signedPreKey: string; readonly registrationId: string; readonly noiseKey: string; readonly pairingEphemeralKeyPair: string; advSecretKey: string; ... 14 more ...; routingInfo: string; }'.
-  14 |     accountSyncCounter: 'account-sync-counter',
-  15 |     accountSettings: 'account-settings',
-> 16 |     appStateSyncKey: 'app-state-sync-key',
-     |     ^
-  17 |     processedHistoryMessages: 'processed-history-messages',
-  18 |     myAppStateKeyId: 'my-app-state-key-id',
-  19 |     lastAccountSyncTimestamp: 'last-account-sync-timestamp',
+./src/lib/supabase-auth-state.ts:6:7
+Type error: Type '{ noiseKey: string; signedIdentityKey: string; signedPreKey: string; registrationId: string; advSecretKey: string; nextPreKeyId: string; firstUnuploadedPreKeyId: string; accountSyncCounter: string; ... 7 more ...; registered: string; }' is missing the following properties from type '{ readonly signedIdentityKey: string; readonly signedPreKey: string; readonly registrationId: string; readonly noiseKey: string; readonly pairingEphemeralKeyPair: string; advSecretKey: string; ... 14 more ...; routingInfo: string; }': pairingEphemeralKeyPair, pairingCode, lastPropHash, routingInfo
+  4 | const supabase = createClient();
+  5 |
+> 6 | const KEY_MAP: { [T in keyof AuthenticationState['creds']]: string } = {
+    |       ^
+  7 |     noiseKey: 'noise-key',
+  8 |     signedIdentityKey: 'signed-identity-key',
+  9 |     signedPreKey: 'signed-pre-key',
 Next.js build worker exited with code: 1 and signal: null
 Error: Command "npm run build" exited with 1
