@@ -92,7 +92,7 @@ const removeData = async (phoneNumber: string) => {
 };
 
 export const useSupabaseAuthState = async (phoneNumber: string): Promise<{ state: AuthenticationState, saveCreds: () => Promise<void> }> => {
-    let creds: proto.ICreds;
+    let creds: AuthenticationState['creds'];
     let keys: any = {};
 
     const data = await readData(phoneNumber);
@@ -123,7 +123,7 @@ export const useSupabaseAuthState = async (phoneNumber: string): Promise<{ state
             pairingEphemeralKeyPair: { private: Buffer.alloc(32), public: Buffer.alloc(32) },
             pairingCode: '',
             lastPropHash: '',
-            routingInfo: '',
+            routingInfo: Buffer.alloc(0),
         };
         keys = {};
     }
@@ -137,8 +137,8 @@ export const useSupabaseAuthState = async (phoneNumber: string): Promise<{ state
         state: {
             creds,
             keys: {
-                get: (type, ids) => {
-                    const key = KEY_MAP[type];
+                get: (type: any, ids: string[]) => {
+                    const key = type;
                     return ids.reduce(
                         (dict, id) => {
                             let value = keys[key]?.[id];
@@ -149,12 +149,12 @@ export const useSupabaseAuthState = async (phoneNumber: string): Promise<{ state
                                 dict[id] = value;
                             }
                             return dict;
-                        }, {}
+                        }, {} as Record<string, any>
                     );
                 },
-                set: (data) => {
+                set: (data: any) => {
                     for(const type in data) {
-                        const key = KEY_MAP[type as keyof typeof KEY_MAP];
+                        const key = type;
                         for(const id in data[type]) {
                             if(!keys[key]) {
                                 keys[key] = {};

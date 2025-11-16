@@ -1,12 +1,12 @@
 Failed to compile.
-./src/lib/supabase-auth-state.ts:6:7
-Type error: Type '{ noiseKey: string; signedIdentityKey: string; signedPreKey: string; registrationId: string; advSecretKey: string; nextPreKeyId: string; firstUnuploadedPreKeyId: string; accountSyncCounter: string; ... 7 more ...; registered: string; }' is missing the following properties from type '{ readonly signedIdentityKey: string; readonly signedPreKey: string; readonly registrationId: string; readonly noiseKey: string; readonly pairingEphemeralKeyPair: string; advSecretKey: string; ... 14 more ...; routingInfo: string; }': pairingEphemeralKeyPair, pairingCode, lastPropHash, routingInfo
-  4 | const supabase = createClient();
-  5 |
-> 6 | const KEY_MAP: { [T in keyof AuthenticationState['creds']]: string } = {
-    |       ^
-  7 |     noiseKey: 'noise-key',
-  8 |     signedIdentityKey: 'signed-identity-key',
-  9 |     signedPreKey: 'signed-pre-key',
+./src/lib/supabase-auth-state.ts:95:22
+Type error: Namespace '"/vercel/path0/node_modules/@whiskeysockets/baileys/WAProto/index".proto' has no exported member 'ICreds'.
+  93 |
+  94 | export const useSupabaseAuthState = async (phoneNumber: string): Promise<{ state: AuthenticationState, saveCreds: () => Promise<void> }> => {
+> 95 |     let creds: proto.ICreds;
+     |                      ^
+  96 |     let keys: any = {};
+  97 |
+  98 |     const data = await readData(phoneNumber);
 Next.js build worker exited with code: 1 and signal: null
 Error: Command "npm run build" exited with 1
