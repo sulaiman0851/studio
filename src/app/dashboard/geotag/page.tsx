@@ -66,7 +66,7 @@ const GeotagPage = () => {
         stream.getTracks().forEach(track => track.stop());
       }
     };
-  }, [stream, toast]);
+  }, []);
 
   // Fetch gallery photos
   useEffect(() => {
