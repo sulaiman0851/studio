@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/hooks/use-auth';
 
 interface GeotaggedPhoto {
   id: string;
@@ -15,6 +16,7 @@ interface GeotaggedPhoto {
 
 const GeotagPage = () => {
   const { toast } = useToast();
+  const { currentUser, loading: authLoading } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -92,6 +94,10 @@ const GeotagPage = () => {
   }, [toast]);
 
   const takePhoto = async () => {
+    if (!currentUser) {
+      toast({ title: 'Unauthorized', description: 'You must be logged in to take a photo.', variant: 'destructive' });
+      return;
+    }
     if (!videoRef.current || !canvasRef.current || !coords) {
         toast({ title: 'Error', description: 'Camera or location not ready.', variant: 'destructive' });
         return;
@@ -170,7 +176,7 @@ const GeotagPage = () => {
               </div>
             )}
           </div>
-          <Button onClick={takePhoto} disabled={!stream || !coords || isUploading}>
+          <Button onClick={takePhoto} disabled={!stream || !coords || isUploading || authLoading || !currentUser}>
             {isUploading ? 'Uploading...' : 'Take Photo'}
           </Button>
           <canvas ref={canvasRef} style={{ display: 'none' }} />
