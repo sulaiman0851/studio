@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import QRCode from 'qrcode.react';
+import { QRCodeSVG } from 'qrcode.react';
 
 const WhatsAppBotPage = () => {
   const { currentUser, loading, role } = useAuth();
@@ -220,7 +220,7 @@ const WhatsAppBotPage = () => {
                 </Button>
                 {qrCode && (
                   <div className="mt-4 p-4 bg-white rounded-md flex justify-center">
-                    <QRCode value={qrCode} />
+                    <QRCodeSVG value={qrCode} />
                   </div>
                 )}
                 {sessionStatus === 'connecting' && !qrCode && (
