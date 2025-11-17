@@ -2,11 +2,6 @@ import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
   const authorization = req.headers.get('Authorization');
   const token = authorization?.split(' ')[1];
 
@@ -14,7 +9,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized: No token provided' }, { status: 401 });
   }
 
-  supabase.auth.setAuth(token);
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    }
+  );
 
   const { data: { user }, error: userError } = await supabase.auth.getUser();
 
@@ -69,11 +74,6 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
   const authorization = req.headers.get('Authorization');
   const token = authorization?.split(' ')[1];
 
@@ -81,7 +81,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized: No token provided' }, { status: 401 });
   }
 
-  supabase.auth.setAuth(token);
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    }
+  );
 
   const { data: { user }, error: userError } = await supabase.auth.getUser();
 

@@ -1,12 +1,24 @@
-Failed to compile.
-./src/lib/supabase-auth-state.ts:95:22
-Type error: Namespace '"/vercel/path0/node_modules/@whiskeysockets/baileys/WAProto/index".proto' has no exported member 'ICreds'.
-  93 |
-  94 | export const useSupabaseAuthState = async (phoneNumber: string): Promise<{ state: AuthenticationState, saveCreds: () => Promise<void> }> => {
-> 95 |     let creds: proto.ICreds;
-     |                      ^
-  96 |     let keys: any = {};
-  97 |
-  98 |     const data = await readData(phoneNumber);
-Next.js build worker exited with code: 1 and signal: null
-Error: Command "npm run build" exited with 1
+Console Error
+
+
+Error fetching job count for month: ""
+
+src/lib/metrics.ts (34:13) @ getJobCounts
+
+
+  32 |
+  33 |   if (error) {
+> 34 |     console.error(`Error fetching job count for ${timeframe}:`, error.message);
+     |             ^
+  35 |     return 0;
+  36 |   }
+  37 |
+Call Stack
+5
+
+Show 3 ignore-listed frame(s)
+getJobCounts
+src/lib/metrics.ts (34:13)
+async DashboardPage.useEffect.fetchMetrics
+
+

@@ -31,7 +31,7 @@ export async function getJobCounts(timeframe: 'month' | 'week' | 'day'): Promise
     .gte('created_at', startDate.toISOString());
 
   if (error) {
-    console.error(`Error fetching job count for ${timeframe}:`, error.message);
+    console.error(`Error fetching job count for ${timeframe}:`, error);
     return 0;
   }
 
@@ -52,7 +52,7 @@ export async function getDailyActiveUsers(): Promise<number> {
     .gte('created_at', startOfDay.toISOString());
 
   if (error) {
-    console.error('Error fetching daily active users:', error.message);
+    console.error('Error fetching daily active users:', error);
     return 0;
   }
 
