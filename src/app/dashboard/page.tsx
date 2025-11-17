@@ -29,13 +29,7 @@ const DashboardPage = () => {
   const [recentActivities, setRecentActivities] = useState<JobEntry[]>([]);
   const [loadingActivities, setLoadingActivities] = useState(true);
 
-  // Helper function to get time-based greeting
-  const getTimeBasedGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good Morning';
-    if (hour < 18) return 'Good Afternoon';
-    return 'Good Evening';
-  };
+  const [greeting, setGreeting] = useState('');
 
   // Extract first name
   const getFirstName = (fullName: string | undefined | null) => {
@@ -44,7 +38,16 @@ const DashboardPage = () => {
   };
 
   const userFirstName = getFirstName(currentUser?.user_metadata?.full_name);
-  const greeting = getTimeBasedGreeting();
+  
+  useEffect(() => {
+    const getGreeting = () => {
+      const hour = new Date().getHours();
+      if (hour < 12) return 'Good Morning';
+      if (hour < 18) return 'Good Afternoon';
+      return 'Good Evening';
+    };
+    setGreeting(getGreeting());
+  }, []);
 
   useEffect(() => {
     const fetchMetrics = async () => {

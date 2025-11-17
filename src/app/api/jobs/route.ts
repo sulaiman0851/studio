@@ -3,11 +3,20 @@ import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {
-  const supabase = createRouteHandlerClient({ cookies });
-  const { data: { user } } = await supabase.auth.getUser();
+  const cookieStore = cookies();
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const authorization = req.headers.get('Authorization');
+  const token = authorization?.split(' ')[1];
+
+  if (!token) {
+    return NextResponse.json({ error: 'Unauthorized: No token provided' }, { status: 401 });
+  }
+
+  const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+
+  if (userError || !user) {
+    return NextResponse.json({ error: 'Unauthorized: Invalid token' }, { status: 401 });
   }
 
   const { searchParams } = new URL(req.url);
@@ -43,7 +52,10 @@ export async function GET(req: NextRequest) {
 
   query = query.order('due_date', { ascending: true });
 
+  console.log('Constructed Supabase query:', query.toString());
   const { data, error } = await query;
+  console.log('Supabase query result - Data:', data);
+  console.log('Supabase query result - Error:', error);
 
   if (error) {
     console.error('Error fetching jobs:', error);
@@ -54,11 +66,20 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = createRouteHandlerClient({ cookies });
-  const { data: { user } } = await supabase.auth.getUser();
+  const cookieStore = cookies();
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const authorization = req.headers.get('Authorization');
+  const token = authorization?.split(' ')[1];
+
+  if (!token) {
+    return NextResponse.json({ error: 'Unauthorized: No token provided' }, { status: 401 });
+  }
+
+  const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+
+  if (userError || !user) {
+    return NextResponse.json({ error: 'Unauthorized: Invalid token' }, { status: 401 });
   }
 
   const { title, description, due_date, assigned_to } = await req.json();

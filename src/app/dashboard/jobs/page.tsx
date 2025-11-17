@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { createClient } from '@/lib/supabase/client';
 import { PlusCircle, Edit, Trash2 } from 'lucide-react';
 
 interface Job {
@@ -27,6 +28,7 @@ interface Job {
 type FilterType = 'today' | 'week' | 'month' | 'year' | 'all';
 
 const JobsPage = () => {
+  const supabase = createClient();
   const { currentUser, loading: authLoading, role } = useAuth();
   const { toast } = useToast();
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -48,7 +50,15 @@ const JobsPage = () => {
   const fetchJobs = async (currentFilter: FilterType) => {
     setLoadingJobs(true);
     try {
-      const response = await fetch(`/api/jobs?filter=${currentFilter}`);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+      const response = await fetch(`/api/jobs?filter=${currentFilter}`, {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch jobs');
       }
@@ -78,9 +88,16 @@ const JobsPage = () => {
     }
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
       const response = await fetch('/api/jobs', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({ title, description, due_date: dueDate || null, assigned_to: assignedTo || null }),
       });
 
@@ -112,9 +129,16 @@ const JobsPage = () => {
     }
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
       const response = await fetch(`/api/jobs/${currentJob.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({ title, description, due_date: dueDate || null, status, assigned_to: assignedTo || null }),
       });
 
@@ -147,8 +171,15 @@ const JobsPage = () => {
     }
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
       const response = await fetch(`/api/jobs/${jobId}`, {
         method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (!response.ok) {

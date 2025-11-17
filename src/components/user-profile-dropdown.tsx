@@ -58,7 +58,7 @@ export function UserProfileDropdown() {
           <DropdownMenuContent className="w-56" align="end">
             <DropdownMenuLabel>
               <p className="font-semibold">My Account</p>
-              <p className="text-xs text-muted-foreground dark:text-gray-300 font-normal">
+              <p className="text-xs text-muted-foreground dark:text-gray-400 font-normal">
                 {currentUser?.email}
               </p>
             </DropdownMenuLabel>

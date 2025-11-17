@@ -48,7 +48,7 @@ export async function getDailyActiveUsers(): Promise<number> {
 
   const { data, error } = await supabase
     .from('job_entries')
-    .select('distinct user_id')
+    .select('user_id')
     .gte('created_at', startOfDay.toISOString());
 
   if (error) {
@@ -56,5 +56,10 @@ export async function getDailyActiveUsers(): Promise<number> {
     return 0;
   }
 
-  return data?.length || 0;
+  if (!data) {
+    return 0;
+  }
+
+  const uniqueUserIds = new Set(data.map(entry => entry.user_id));
+  return uniqueUserIds.size;
 }
