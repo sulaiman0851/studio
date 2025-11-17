@@ -29,6 +29,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
     { name: 'Projects', icon: Folder, path: '/dashboard/projects' },
     { name: 'Team', icon: Users, path: '/dashboard/team' },
     { name: 'Job Input', icon: FileText, path: '/dashboard/job-input' },
+    { name: 'Job List', icon: FileText, path: '/dashboard/jobs' },
     { name: 'Settings', icon: Settings, path: '/dashboard/settings' },
     { name: 'Geotag Photo', icon: Camera, path: '/dashboard/geotag' },
   ];
