@@ -74,7 +74,7 @@ const DashboardPage = () => {
     const fetchRecentActivities = async () => {
       setLoadingActivities(true);
       const { data, error } = await supabase
-        .from('job_entries')
+        .from('jobs')
         .select('*, profiles(fullname)') // Select job details and join with profiles to get fullname
         .order('created_at', { ascending: false })
         .limit(5); // Fetch last 5 activities

@@ -48,7 +48,7 @@
     "firebase": "^11.9.1",
     "genkit": "^1.20.0",
     "lucide-react": "^0.475.0",
-    "next": "15.3.3",
+    "next": "^15.5.6",
     "patch-package": "^8.0.0",
     "pino": "^10.1.0",
     "qrcode.react": "^4.2.0",
@@ -65,11 +65,11 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@types/uuid": "^9.0.8",
     "autoprefixer": "^10.4.22",
     "genkit-cli": "^1.20.0",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5",
-    "@types/uuid": "^9.0.8"
+    "typescript": "^5"
   }
 }

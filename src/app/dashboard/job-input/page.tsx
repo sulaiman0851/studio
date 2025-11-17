@@ -65,7 +65,7 @@ const JobInputPage = () => {
     setIsSubmitting(true);
 
     const formData = {
-      user_id: currentUser.id,
+      created_by: currentUser.id,
       job_type: jobType,
       customer_name: customerName,
       type_modem_ont: typeModemOnt,
@@ -78,7 +78,7 @@ const JobInputPage = () => {
       reason: reason,
     };
 
-    const { error } = await supabase.from('job_entries').insert([formData]);
+    const { error } = await supabase.from('jobs').insert([formData]);
 
     if (error) {
       toast({

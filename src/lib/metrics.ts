@@ -26,7 +26,7 @@ export async function getJobCounts(timeframe: 'month' | 'week' | 'day'): Promise
   }
 
   const { count, error } = await supabase
-    .from('job_entries')
+    .from('jobs')
     .select('*', { count: 'exact', head: true })
     .gte('created_at', startDate.toISOString());
 
@@ -47,8 +47,8 @@ export async function getDailyActiveUsers(): Promise<number> {
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Start of the current day
 
   const { data, error } = await supabase
-    .from('job_entries')
-    .select('user_id')
+    .from('jobs')
+    .select('created_by')
     .gte('created_at', startOfDay.toISOString());
 
   if (error) {
@@ -60,6 +60,6 @@ export async function getDailyActiveUsers(): Promise<number> {
     return 0;
   }
 
-  const uniqueUserIds = new Set(data.map(entry => entry.user_id));
+  const uniqueUserIds = new Set(data.map(entry => entry.created_by));
   return uniqueUserIds.size;
 }

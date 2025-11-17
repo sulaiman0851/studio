@@ -1,10 +1,11 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {
-  const cookieStore = cookies();
-  const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
   const authorization = req.headers.get('Authorization');
   const token = authorization?.split(' ')[1];
@@ -13,7 +14,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized: No token provided' }, { status: 401 });
   }
 
-  const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+  supabase.auth.setAuth(token);
+
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
 
   if (userError || !user) {
     return NextResponse.json({ error: 'Unauthorized: Invalid token' }, { status: 401 });
@@ -66,8 +69,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const cookieStore = cookies();
-  const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
   const authorization = req.headers.get('Authorization');
   const token = authorization?.split(' ')[1];
@@ -76,7 +81,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized: No token provided' }, { status: 401 });
   }
 
-  const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+  supabase.auth.setAuth(token);
+
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
 
   if (userError || !user) {
     return NextResponse.json({ error: 'Unauthorized: Invalid token' }, { status: 401 });
