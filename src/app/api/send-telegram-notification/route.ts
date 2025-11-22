@@ -26,8 +26,7 @@ export async function POST(request: Request) {
     const message = `
 *New Job Entry!*
 *Job Type:* ${jobDetails.job_type}
-*Customer Name:* ${jobDetails.customer_name || 'N/A'}
-*Submitted by User ID:* ${jobDetails.user_id}
+*Submitted by User ID:* ${jobDetails.created_by}
 
 *Details:*
 ${jobDetails.type_modem_ont ? `  - Type Modem/ONT: ${jobDetails.type_modem_ont}\n` : ''}

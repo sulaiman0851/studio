@@ -67,7 +67,6 @@ const JobInputPage = () => {
     const formData = {
       created_by: currentUser.id,
       job_type: jobType,
-      customer_name: customerName,
       type_modem_ont: typeModemOnt,
       serial_number: serialNumber,
       power_rx: powerRx,
@@ -292,7 +291,9 @@ const JobInputPage = () => {
               </div>
             )}
 
-            <Button type="submit">Submit Job</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Submitting...' : 'Submit Job'}
+            </Button>
           </form>
         </CardContent>
       </Card>

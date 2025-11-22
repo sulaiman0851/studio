@@ -11,8 +11,7 @@ type JobEntry = {
   id: string;
   created_at: string;
   job_type: string;
-  customer_name: string;
-  profiles: {
+  created_by: {
     fullname: string;
   } | null;
 };
@@ -75,7 +74,7 @@ const DashboardPage = () => {
       setLoadingActivities(true);
       const { data, error } = await supabase
         .from('jobs')
-        .select('*, profiles(fullname)') // Select job details and join with profiles to get fullname
+        .select('*, created_by:profiles(fullname)') // Select job details and join with profiles to get fullname
         .order('created_at', { ascending: false })
         .limit(5); // Fetch last 5 activities
 
@@ -216,7 +215,7 @@ const DashboardPage = () => {
           <div className="mt-4 space-y-3">
             {recentActivities.map((activity) => (
               <p key={activity.id} className="text-gray-600 dark:text-gray-300">
-                - {activity.profiles?.fullname || 'Unknown User'} submitted a '{activity.job_type}' job for '{activity.customer_name}' on {new Date(activity.created_at).toLocaleString()}.
+                - {activity.created_by?.fullname || 'Unknown User'} submitted a '{activity.job_type}' job on {new Date(activity.created_at).toLocaleString()}.
               </p>
             ))}
           </div>
