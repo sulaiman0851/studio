@@ -66,7 +66,9 @@ const JobInputPage = () => {
 
     const formData = {
       created_by: currentUser.id,
+      title: `${jobType} - ${customerName}`, // Generate a title
       job_type: jobType,
+      customer_name: customerName,
       type_modem_ont: typeModemOnt,
       serial_number: serialNumber,
       power_rx: powerRx,
@@ -101,13 +103,21 @@ const JobInputPage = () => {
           body: JSON.stringify({ jobDetails: formData }),
         });
 
-        const telegramResponseData = await telegramResponse.json(); // Parse response
+        let telegramResponseData;
+        try {
+          const text = await telegramResponse.text();
+          console.log('Raw Telegram API response:', text);
+          telegramResponseData = text ? JSON.parse(text) : {};
+        } catch (e) {
+          console.error('Error parsing Telegram response:', e);
+          telegramResponseData = {};
+        }
 
         if (!telegramResponse.ok) {
-          console.error('Failed to send Telegram notification via API route.');
+          console.error('Failed to send Telegram notification via API route:', telegramResponseData);
           toast({
             title: 'Warning',
-            description: 'Job submitted, but Telegram notification failed.',
+            description: `Job submitted, but Telegram notification failed: ${telegramResponseData.message || 'Unknown error'}`,
             variant: 'destructive',
           });
         } else {

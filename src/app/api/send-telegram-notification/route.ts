@@ -2,9 +2,8 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server'; // Import createAdminClient
 
 export async function POST(request: Request) {
-  const supabase = createAdminClient(); // Use admin client
-
   try {
+    const supabase = createAdminClient();
     const { jobDetails } = await request.json();
 
     // 1. Fetch Telegram config
@@ -61,6 +60,9 @@ ${jobDetails.reason ? `  - Reason: ${jobDetails.reason}\n` : ''}
     return NextResponse.json({ message: 'Telegram notification sent successfully.' }, { status: 200 });
   } catch (error: any) {
     console.error('Error in Telegram notification API:', error);
-    return NextResponse.json({ message: 'Internal server error.' }, { status: 500 });
+    return NextResponse.json({ 
+      message: 'Internal server error.', 
+      error: error.message || String(error) 
+    }, { status: 500 });
   }
 }

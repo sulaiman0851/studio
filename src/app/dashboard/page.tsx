@@ -31,7 +31,7 @@ const DashboardPage = () => {
   const [monthlyJobs, setMonthlyJobs] = useState<number | null>(null);
   const [weeklyJobs, setWeeklyJobs] = useState<number | null>(null);
   const [dailyJobs, setDailyJobs] = useState<number | null>(null);
-  const [dailyActiveUsers, setDailyActiveUsers] = useState<number | null>(null); // Changed from weeklyActiveUsers
+  const [dailyActiveUsers, setDailyActiveUsers] = useState<number | null>(null);
   const [loadingMetrics, setLoadingMetrics] = useState(true);
 
   const [recentActivities, setRecentActivities] = useState<JobEntry[]>([]);
@@ -69,29 +69,66 @@ const DashboardPage = () => {
         getJobCounts('month'),
         getJobCounts('week'),
         getJobCounts('day'),
-        getDailyActiveUsers(), // Changed from getWeeklyActiveUsers
+        getDailyActiveUsers(),
       ]);
 
       setMonthlyJobs(monthlyCount);
       setWeeklyJobs(weeklyCount);
       setDailyJobs(dailyCount);
-      setDailyActiveUsers(activeUsersCount); // Changed from setWeeklyActiveUsers
+      setDailyActiveUsers(activeUsersCount);
       setLoadingMetrics(false);
     };
 
     const fetchRecentActivities = async () => {
       setLoadingActivities(true);
-      const { data, error } = await supabase
+      
+      // 1. Fetch jobs first without the join
+      const { data: jobsData, error: jobsError } = await supabase
         .from('jobs')
-        .select('*, created_by:profiles(fullname)') // Select job details and join with profiles to get fullname
+        .select('*')
         .order('created_at', { ascending: false })
-        .limit(5); // Fetch last 5 activities
+        .limit(5);
 
-      if (error) {
-        console.error('Error fetching recent activities:', error.message);
-      } else {
-        setRecentActivities(data as JobEntry[]);
+      if (jobsError) {
+        console.error('Error fetching recent activities:', jobsError.message);
+        setLoadingActivities(false);
+        return;
       }
+
+      // 2. Extract user IDs
+      const jobs = jobsData as any[];
+      const userIds = [...new Set(jobs.map((job: any) => job.user_id || job.created_by).filter(Boolean))] as string[];
+
+      // 3. Fetch profiles for these IDs
+      let profilesMap: Record<string, { fullname: string }> = {};
+      
+      if (userIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, fullname')
+          .in('id', userIds);
+
+        if (profilesData) {
+          profilesData.forEach((profile) => {
+            profilesMap[profile.id] = profile;
+          });
+        }
+      }
+
+      // 4. Combine the data
+      const combinedData: JobEntry[] = jobs.map((job: any) => {
+        const userId = job.user_id || job.created_by;
+        const profile = profilesMap[userId];
+        
+        return {
+          id: job.id,
+          created_at: job.created_at,
+          job_type: job.job_type,
+          created_by: profile ? { fullname: profile.fullname } : null,
+        };
+      });
+
+      setRecentActivities(combinedData);
       setLoadingActivities(false);
     };
 

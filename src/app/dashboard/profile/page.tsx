@@ -34,28 +34,54 @@ const ProfilePage = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       if (authLoading) return;
+      
       if (!currentUser) {
+        // Only redirect if we are sure auth is done and no user is found
         router.push('/login');
         return;
       }
 
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('username, fullname, email, avatar_url')
-        .eq('id', currentUser.id)
-        .single();
+      try {
+        console.log('Attempting to fetch profile for ID:', currentUser.id);
+        
+        // Try fetching all columns to avoid column name mismatches
+        // Use maybeSingle() to avoid error if row doesn't exist
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', currentUser.id)
+          .maybeSingle();
 
-      if (error || !data) {
-        toast({ title: 'Error', description: 'Could not fetch your profile.', variant: 'destructive' });
-        router.push('/dashboard');
-      } else {
-        setProfile(data);
-        // Update currentUser's user_metadata with the fullname from the profiles table
-        await supabase.auth.updateUser({
-          data: { full_name: data.fullname },
-        });
+        if (error) {
+          console.error('Supabase Error:', error);
+          toast({ 
+            title: 'Error Fetching Profile', 
+            description: error.message || 'Unknown error occurred', 
+            variant: 'destructive' 
+          });
+        } else if (!data) {
+          console.log('No profile found for user:', currentUser.id);
+          // Optional: You could trigger a profile creation here if needed
+          toast({
+            title: 'Profile Not Found',
+            description: 'Please complete your profile details.',
+          });
+        } else {
+          console.log('Profile data fetched:', data);
+          setProfile(data);
+          
+          // Update auth metadata if fullname exists
+          if (data.fullname) {
+            supabase.auth.updateUser({
+              data: { full_name: data.fullname },
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Unexpected error block:', err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchProfile();
@@ -129,7 +155,40 @@ const ProfilePage = () => {
   };
 
   if (loading || authLoading) {
-    return <div>Loading profile...</div>;
+    return (
+      <div className="p-4 md:p-8">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <div className="h-10 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2" />
+            <div className="h-6 w-64 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+          </div>
+          <div className="h-10 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+        </div>
+
+        <div className="grid gap-8 md:grid-cols-3">
+          <div className="md:col-span-1">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center flex flex-col items-center">
+              <div className="w-32 h-32 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse mb-4" />
+              <div className="h-8 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2" />
+              <div className="h-5 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-6" />
+              <div className="h-10 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+            </div>
+          </div>
+
+          <div className="md:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+            <div className="h-7 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-6" />
+            <div className="space-y-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i}>
+                  <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2" />
+                  <div className="h-6 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!profile) {
@@ -170,7 +229,7 @@ const ProfilePage = () => {
               </AvatarFallback>
             </Avatar>
             <h2 className="text-2xl font-bold dark:text-white">{profile.fullname}</h2>
-            <p className="text-muted-foreground">@{profile.username}</p>
+            <p className="text-muted-foreground">@{profile.username || profile.email}</p>
 
             <div className="mt-6 space-y-3">
                 <Label htmlFor="avatar-upload" className="cursor-pointer inline-block">

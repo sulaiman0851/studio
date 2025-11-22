@@ -22,13 +22,13 @@ export function useAuth() {
           .from('profiles')
           .select('role')
           .eq('id', userData.user.id)
-          .single();
+          .maybeSingle();
 
         if (profileError) {
           console.error('Error fetching profile role:', profileError.message);
           setRole(null);
         } else {
-          setRole(profileData.role);
+          setRole(profileData?.role ?? null);
         }
       } else {
         setRole(null);
@@ -46,13 +46,13 @@ export function useAuth() {
             .from('profiles')
             .select('role')
             .eq('id', session.user.id)
-            .single();
+            .maybeSingle();
 
           if (profileError) {
             console.error('Error fetching profile role on auth change:', profileError.message);
             setRole(null);
           } else {
-            setRole(profileData.role);
+            setRole(profileData?.role ?? null);
           }
         } else {
           setRole(null);

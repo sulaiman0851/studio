@@ -4,7 +4,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { User, Users, Shield, Edit, PlusCircle } from 'lucide-react';
+import { deleteUser } from './actions';
+import { User, Users, Shield, Edit, PlusCircle, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
@@ -15,7 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
-import { cn } from '@/lib/utils'; // Using clsx utility for conditional classes
+import { cn } from '@/lib/utils';
 
 type Profile = {
   id: string;
@@ -29,6 +30,7 @@ const TeamPage = () => {
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [editingProfileId, setEditingProfileId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const supabase = createClient();
   const router = useRouter();
@@ -89,6 +91,23 @@ const TeamPage = () => {
     setEditingProfileId(null);
   };
 
+  const handleDeleteUser = async (userId: string, username: string) => {
+    if (!confirm(`Are you sure you want to delete user "${username}"? This action cannot be undone and will remove all their data.`)) {
+      return;
+    }
+
+    setDeletingId(userId);
+    const result = await deleteUser(userId);
+    
+    if (result.success) {
+      toast({ title: "Success", description: `User ${username} has been deleted.` });
+      await fetchAllProfiles();
+    } else {
+      toast({ title: "Error", description: `Failed to delete user: ${result.error}`, variant: "destructive" });
+    }
+    setDeletingId(null);
+  };
+
   if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center p-12">
@@ -126,11 +145,13 @@ const TeamPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {profiles.map((profile) => {
             const isEditing = editingProfileId === profile.id;
+            const isDeleting = deletingId === profile.id;
+            
             return (
               <div 
                 key={profile.id} 
                 className={cn(
-                  "bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md transition-all",
+                  "bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md transition-all relative",
                   isEditing && "ring-2 ring-blue-500"
                 )}
               >
@@ -163,18 +184,41 @@ const TeamPage = () => {
                         <SelectItem value="engineer">Engineer</SelectItem>
                       </SelectContent>
                     </Select>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="w-full mt-2"
+                      onClick={() => setEditingProfileId(null)}
+                    >
+                      Cancel
+                    </Button>
                   </div>
                 ) : (
-                  userRole === 'admin' && currentUser?.id !== profile.id && (
-                    <Button 
-                      variant="outline" 
-                      className="w-full mt-4"
-                      onClick={() => setEditingProfileId(profile.id)}
-                    >
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit Role
-                    </Button>
-                  )
+                  <div className="flex gap-2 mt-4">
+                    {userRole === 'admin' && currentUser?.id !== profile.id && (
+                      <Button 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={() => setEditingProfileId(profile.id)}
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit Role
+                      </Button>
+                    )}
+                    
+                    {/* Delete button available for all roles as requested, but maybe prevent deleting self? */}
+                    {currentUser?.id !== profile.id && (
+                      <Button 
+                        variant="destructive"
+                        className={cn("flex-1", userRole !== 'admin' && "w-full")}
+                        onClick={() => handleDeleteUser(profile.id, profile.username)}
+                        disabled={isDeleting}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        {isDeleting ? 'Deleting...' : 'Delete'}
+                      </Button>
+                    )}
+                  </div>
                 )}
               </div>
             );
