@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,6 +51,9 @@ const JobsPage = () => {
   const [status, setStatus] = useState('pending');
   const [assignedTo, setAssignedTo] = useState('');
 
+  // Track user ID to prevent unnecessary re-fetches
+  const lastUserIdRef = useRef<string | null>(null);
+
   const isAdminOrSenior = role === 'admin' || role === 'senior';
 
   const fetchJobs = async () => {
@@ -96,10 +99,21 @@ const JobsPage = () => {
   };
 
   useEffect(() => {
-    if (!authLoading && currentUser) {
+    // Hanya fetch kalau:
+    // 1. User baru login (user ID berubah dari null ke ada)
+    // 2. User ID-nya beneran berubah (ganti akun)
+    // 3. Filter/search/sort/page berubah (tapi user tetap sama)
+    const currentUserId = currentUser?.id || null;
+    const userChanged = lastUserIdRef.current !== currentUserId;
+    
+    if (currentUser && userChanged) {
+      lastUserIdRef.current = currentUserId;
+      fetchJobs();
+    } else if (currentUser && !userChanged) {
+      // User sama, tapi filter/search/sort/page berubah
       fetchJobs();
     }
-  }, [authLoading, currentUser, filter, searchQuery, sortBy, sortOrder, page]);
+  }, [currentUser?.id, filter, searchQuery, sortBy, sortOrder, page]);
 
   const handleCreateJob = async () => {
     if (!title) {
@@ -215,6 +229,39 @@ const JobsPage = () => {
         message = err.message;
       }
       toast({ title: 'Error', description: `Could not delete job: ${message}`, variant: 'destructive' });
+    }
+  };
+
+  const handleApproveJob = async (jobId: string) => {
+    if (!confirm('Approve job ini?')) {
+      return;
+    }
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+      const response = await fetch(`/api/jobs/${jobId}/approve`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to approve job');
+      }
+
+      toast({ title: 'Success', description: 'Job approved successfully!' });
+      fetchJobs(); // Refresh list
+    } catch (err) {
+      let message = 'An unknown error occurred';
+      if (err instanceof Error) {
+        message = err.message;
+      }
+      toast({ title: 'Error', description: `Could not approve job: ${message}`, variant: 'destructive' });
     }
   };
 
@@ -351,7 +398,12 @@ const JobsPage = () => {
                   <div className="mt-auto space-y-1 pt-4">
                     <div className="flex justify-between text-xs">
                       <span className="font-medium">Status:</span>
-                      <span className={`capitalize ${job.status === 'completed' ? 'text-green-600' : job.status === 'in-progress' ? 'text-blue-600' : 'text-yellow-600'}`}>
+                      <span className={`capitalize ${
+                        job.status === 'approved' ? 'text-emerald-600 font-semibold' : 
+                        job.status === 'completed' ? 'text-green-600' : 
+                        job.status === 'in-progress' ? 'text-blue-600' : 
+                        'text-yellow-600'
+                      }`}>
                         {job.status}
                       </span>
                     </div>
@@ -371,6 +423,17 @@ const JobsPage = () => {
                       <span>Assigned:</span>
                       <span className="truncate max-w-[100px]" title={job.assigned_to || 'Self'}>{job.assigned_to || 'Self'}</span>
                     </div>
+                    {/* Tombol Approve untuk Admin/Senior */}
+                    {isAdminOrSenior && job.status === 'completed' && (
+                      <Button 
+                        onClick={() => handleApproveJob(job.id)} 
+                        className="w-full mt-3"
+                        variant="default"
+                        size="sm"
+                      >
+                        ✓ Approve Job
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
