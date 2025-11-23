@@ -1,10 +1,27 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
 export async function PUT(req: NextRequest, context: any) {
-  const supabase = createRouteHandlerClient({ cookies });
-  const { data: { user } = {} } = await supabase.auth.getUser();
+  let supabase = createRouteHandlerClient({ cookies });
+  let { data: { user } = {} } = await supabase.auth.getUser();
+
+  if (!user) {
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          global: { headers: { Authorization: `Bearer ${token}` } },
+        }
+      );
+      const { data } = await supabase.auth.getUser();
+      user = data.user;
+    }
+  }
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -47,8 +64,24 @@ export async function PUT(req: NextRequest, context: any) {
 }
 
 export async function DELETE(req: NextRequest, context: any) {
-  const supabase = createRouteHandlerClient({ cookies });
-  const { data: { user } = {} } = await supabase.auth.getUser();
+  let supabase = createRouteHandlerClient({ cookies });
+  let { data: { user } = {} } = await supabase.auth.getUser();
+
+  if (!user) {
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          global: { headers: { Authorization: `Bearer ${token}` } },
+        }
+      );
+      const { data } = await supabase.auth.getUser();
+      user = data.user;
+    }
+  }
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

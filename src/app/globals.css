@@ -49,47 +49,47 @@
   }
 
   .matcha {
-    --background: 80 20% 98%;
-    --foreground: 120 40% 10%;
-    --card: 80 20% 96%;
-    --card-foreground: 120 40% 10%;
-    --popover: 80 20% 98%;
-    --popover-foreground: 120 40% 10%;
-    --primary: 100 40% 40%;
+    --background: 100 30% 94%;
+    --foreground: 120 40% 15%;
+    --card: 100 30% 90%;
+    --card-foreground: 120 40% 15%;
+    --popover: 100 30% 94%;
+    --popover-foreground: 120 40% 15%;
+    --primary: 100 40% 35%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 80 20% 90%;
-    --secondary-foreground: 120 40% 10%;
-    --muted: 80 20% 90%;
+    --secondary: 100 20% 85%;
+    --secondary-foreground: 120 40% 15%;
+    --muted: 100 25% 75%;
     --muted-foreground: 100 20% 40%;
-    --accent: 100 30% 85%;
-    --accent-foreground: 120 40% 10%;
+    --accent: 100 30% 80%;
+    --accent-foreground: 120 40% 15%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 100 20% 80%;
-    --input: 100 20% 80%;
-    --ring: 100 40% 40%;
+    --border: 100 20% 75%;
+    --input: 100 20% 75%;
+    --ring: 100 40% 35%;
   }
 
   .mocha {
-    --background: 30 20% 98%;
-    --foreground: 25 40% 10%;
-    --card: 30 20% 96%;
-    --card-foreground: 25 40% 10%;
-    --popover: 30 20% 98%;
-    --popover-foreground: 25 40% 10%;
-    --primary: 25 40% 40%;
+    --background: 30 30% 94%;
+    --foreground: 25 40% 15%;
+    --card: 30 30% 90%;
+    --card-foreground: 25 40% 15%;
+    --popover: 30 30% 94%;
+    --popover-foreground: 25 40% 15%;
+    --primary: 25 40% 35%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 30 20% 90%;
-    --secondary-foreground: 25 40% 10%;
-    --muted: 30 20% 90%;
+    --secondary: 30 20% 85%;
+    --secondary-foreground: 25 40% 15%;
+    --muted: 30 25% 75%;
     --muted-foreground: 25 20% 40%;
-    --accent: 25 30% 85%;
-    --accent-foreground: 25 40% 10%;
+    --accent: 30 30% 80%;
+    --accent-foreground: 25 40% 15%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 25 20% 80%;
-    --input: 25 20% 80%;
-    --ring: 25 40% 40%;
+    --border: 30 20% 75%;
+    --input: 30 20% 75%;
+    --ring: 25 40% 35%;
   }
 }
 
@@ -100,4 +100,9 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.theme-transition,
+.theme-transition * {
+  transition: background-color 0.5s ease-in-out, border-color 0.5s ease-in-out, color 0.5s ease-in-out, fill 0.5s ease-in-out, stroke 0.5s ease-in-out;
 }

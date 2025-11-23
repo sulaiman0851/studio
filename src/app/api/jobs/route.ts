@@ -29,12 +29,20 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const filter = searchParams.get('filter'); // 'today', 'week', 'month', 'year'
+  const search = searchParams.get('search');
+  const sort = searchParams.get('sort') || 'created_at'; // Default sort by created_at
+  const order = searchParams.get('order') || 'desc'; // Default order desc (newest first)
+  const page = parseInt(searchParams.get('page') || '1');
+  const limit = parseInt(searchParams.get('limit') || '10');
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
 
   let query = supabase
     .from('jobs')
-    .select('*')
-    .or(`created_by.eq.${user.id},assigned_to.eq.${user.id}`); // Users can see their own jobs or jobs assigned to them
+    .select('*', { count: 'exact' })
+    .or(`created_by.eq.${user.id},assigned_to.eq.${user.id}`);
 
+  // Apply Date Filters
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -58,11 +66,22 @@ export async function GET(req: NextRequest) {
     query = query.gte('due_date', startOfYear.toISOString()).lt('due_date', endOfYear.toISOString());
   }
 
-  query = query.order('due_date', { ascending: true });
+  // Apply Search
+  if (search) {
+    query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
+  }
+
+  // Apply Sorting
+  // Map 'name' to 'title' for sorting if needed, or just use 'title' directly
+  const sortField = sort === 'name' ? 'title' : sort;
+  query = query.order(sortField, { ascending: order === 'asc' });
+
+  // Apply Pagination
+  query = query.range(from, to);
 
   console.log('Constructed Supabase query:', query.toString());
-  const { data, error } = await query;
-  console.log('Supabase query result - Data:', data);
+  const { data, error, count } = await query;
+  console.log('Supabase query result - Data length:', data?.length);
   console.log('Supabase query result - Error:', error);
 
   if (error) {
@@ -70,7 +89,15 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch jobs.', details: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(data);
+  return NextResponse.json({
+    data,
+    meta: {
+      total: count,
+      page,
+      limit,
+      totalPages: count ? Math.ceil(count / limit) : 0
+    }
+  });
 }
 
 export async function POST(req: NextRequest) {
