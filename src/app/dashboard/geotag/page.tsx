@@ -19,6 +19,7 @@ const GeotagPage = () => {
   const { currentUser, loading: authLoading } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [photos, setPhotos] = useState<GeotaggedPhoto[]>([]);
@@ -26,13 +27,10 @@ const GeotagPage = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [isLoadingGallery, setIsLoadingGallery] = useState(true);
 
-  console.log('GeotagPage Auth State: authLoading =', authLoading, 'currentUser =', currentUser);
-
-  // Get camera and location permissions
+  // Permissions: camera + geolocation
   useEffect(() => {
     const getPermissions = async () => {
       try {
-        // Get location
         navigator.geolocation.watchPosition(
           (position) => {
             setCoords({
@@ -41,53 +39,37 @@ const GeotagPage = () => {
             });
           },
           (err) => {
-            setError(`Location error: ${err.message}`);
+            const msg = `Location error: ${err.message}`;
+            setError(msg);
             toast({ title: 'Location Error', description: err.message, variant: 'destructive' });
           }
         );
-
-        // Get camera stream
         const mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
         setStream(mediaStream);
-        if (videoRef.current) {
-          videoRef.current.srcObject = mediaStream;
-        }
-      } catch (err) {
-        let message = 'An unknown error occurred';
-        if (err instanceof Error) {
-            message = err.message;
-        }
-        setError(`Permission error: ${message}`);
-        toast({ title: 'Permission Error', description: message, variant: 'destructive' });
+        if (videoRef.current) videoRef.current.srcObject = mediaStream;
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Permission error';
+        setError(`Permission error: ${msg}`);
+        toast({ title: 'Permission Error', description: msg, variant: 'destructive' });
       }
     };
-
     getPermissions();
-
-    // Cleanup
     return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
+      if (stream) stream.getTracks().forEach((t) => t.stop());
     };
   }, []);
 
-  // Fetch gallery photos
+  // Load gallery photos
   useEffect(() => {
     const fetchPhotos = async () => {
       try {
-        const response = await fetch('/api/geotag/photos');
-        if (!response.ok) {
-          throw new Error('Failed to fetch photos');
-        }
+        const response = await fetch('/api/geotag/photos', { credentials: 'include' });
+        if (!response.ok) throw new Error('Failed to fetch photos');
         const data = await response.json();
         setPhotos(data);
-      } catch (err) {
-        let message = 'An unknown error occurred';
-        if (err instanceof Error) {
-            message = err.message;
-        }
-        toast({ title: 'Error', description: `Could not load gallery: ${message}`, variant: 'destructive' });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Unknown error';
+        toast({ title: 'Error', description: `Could not load gallery: ${msg}`, variant: 'destructive' });
       } finally {
         setIsLoadingGallery(false);
       }
@@ -95,73 +77,76 @@ const GeotagPage = () => {
     fetchPhotos();
   }, [toast]);
 
+  // Take a photo and upload
   const takePhoto = async () => {
     if (!currentUser) {
       toast({ title: 'Unauthorized', description: 'You must be logged in to take a photo.', variant: 'destructive' });
       return;
     }
     if (!videoRef.current || !canvasRef.current || !coords) {
-        toast({ title: 'Error', description: 'Camera or location not ready.', variant: 'destructive' });
-        return;
+      toast({ title: 'Error', description: 'Camera or location not ready.', variant: 'destructive' });
+      return;
     }
     setIsUploading(true);
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    const context = canvas.getContext('2d');
-
-    if (!context) {
-        toast({ title: 'Error', description: 'Could not get canvas context.', variant: 'destructive' });
-        setIsUploading(false);
-        return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      toast({ title: 'Error', description: 'Could not get canvas context.', variant: 'destructive' });
+      setIsUploading(false);
+      return;
     }
-
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-    
-    context.fillStyle = 'white';
-    context.font = '20px Arial';
-    context.shadowColor = 'black';
-    context.shadowBlur = 7;
+    ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+    ctx.fillStyle = 'white';
+    ctx.font = '20px Arial';
+    ctx.shadowColor = 'black';
+    ctx.shadowBlur = 7;
     const coordText = `Lat: ${coords.latitude.toFixed(5)}, Lon: ${coords.longitude.toFixed(5)}`;
-    context.fillText(coordText, 20, canvas.height - 20);
-
+    ctx.fillText(coordText, 20, canvas.height - 20);
     const dataUrl = canvas.toDataURL('image/jpeg');
 
+    // Convert dataURL to Blob/File
+    const blob = await (await fetch(dataUrl)).blob();
+    const file = new File([blob], `photo_${Date.now()}.jpg`, { type: 'image/jpeg' });
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('latitude', coords.latitude.toString());
+    formData.append('longitude', coords.longitude.toString());
+
     try {
-        const response = await fetch('/api/geotag/upload', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                image: dataUrl,
-                latitude: coords.latitude,
-                longitude: coords.longitude,
-            }),
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Failed to upload photo');
-        }
-        
-        const newPhoto = await response.json();
-        // Manually refetch or add to state to update gallery instantly
-        setPhotos(prevPhotos => [{...newPhoto, image_url: newPhoto.url, created_at: new Date().toISOString(), id: ''}, ...prevPhotos]);
-
-        toast({ title: 'Photo Uploaded!', description: 'Saved to your gallery.' });
-
-    } catch (err) {
-        let message = 'An unknown error occurred';
-        if (err instanceof Error) {
-            message = err.message;
-        }
-        toast({ title: 'Upload Error', description: message, variant: 'destructive' });
+      const response = await fetch('/api/geotag/upload', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include', // send auth cookie
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to upload photo');
+      }
+      const newPhoto = await response.json();
+      // Assume API returns { url, latitude, longitude, id }
+      setPhotos((prev) => [
+        {
+          ...newPhoto,
+          image_url: newPhoto.url,
+          created_at: new Date().toISOString(),
+          id: newPhoto.id ?? `${Date.now()}`,
+        },
+        ...prev,
+      ]);
+      toast({ title: 'Photo Uploaded!', description: 'Saved to your gallery.' });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Unknown error';
+      toast({ title: 'Upload Error', description: msg, variant: 'destructive' });
     } finally {
-        setIsUploading(false);
+      setIsUploading(false);
     }
   };
 
+  // Render UI
   return (
     <div className="p-4 md:p-8">
       <Card>
@@ -178,7 +163,10 @@ const GeotagPage = () => {
               </div>
             )}
           </div>
-          <Button onClick={takePhoto} disabled={!stream || !coords || isUploading || authLoading || !currentUser}>
+          <Button
+            onClick={takePhoto}
+            disabled={!stream || !coords || isUploading || authLoading || !currentUser}
+          >
             {isUploading ? 'Uploading...' : 'Take Photo'}
           </Button>
           <canvas ref={canvasRef} style={{ display: 'none' }} />
