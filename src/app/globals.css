@@ -47,6 +47,50 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
   }
+
+  .matcha {
+    --background: 80 20% 98%;
+    --foreground: 120 40% 10%;
+    --card: 80 20% 96%;
+    --card-foreground: 120 40% 10%;
+    --popover: 80 20% 98%;
+    --popover-foreground: 120 40% 10%;
+    --primary: 100 40% 40%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 80 20% 90%;
+    --secondary-foreground: 120 40% 10%;
+    --muted: 80 20% 90%;
+    --muted-foreground: 100 20% 40%;
+    --accent: 100 30% 85%;
+    --accent-foreground: 120 40% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 100 20% 80%;
+    --input: 100 20% 80%;
+    --ring: 100 40% 40%;
+  }
+
+  .mocha {
+    --background: 30 20% 98%;
+    --foreground: 25 40% 10%;
+    --card: 30 20% 96%;
+    --card-foreground: 25 40% 10%;
+    --popover: 30 20% 98%;
+    --popover-foreground: 25 40% 10%;
+    --primary: 25 40% 40%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 30 20% 90%;
+    --secondary-foreground: 25 40% 10%;
+    --muted: 30 20% 90%;
+    --muted-foreground: 25 20% 40%;
+    --accent: 25 30% 85%;
+    --accent-foreground: 25 40% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 25 20% 80%;
+    --input: 25 20% 80%;
+    --ring: 25 40% 40%;
+  }
 }
 
 @layer base {

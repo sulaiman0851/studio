@@ -2,12 +2,16 @@
 
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import { HardHat, Calendar as CalendarIcon } from 'lucide-react';
 import { getJobCounts, getDailyActiveUsers } from '@/lib/metrics';
 import { createClient } from '@/lib/supabase/client'; // Import Supabase client
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/hooks/use-auth'; // Import useAuth
 import LoadingAnimation from '@/components/loading-animation';
 import CardSkeleton from '@/components/ui/card-skeleton';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
 
 const RevenueChart = dynamic(() => import('@/components/charts').then((mod) => mod.RevenueChart), {
   loading: () => <LoadingAnimation />,
@@ -38,6 +42,7 @@ const DashboardPage = () => {
   const [loadingActivities, setLoadingActivities] = useState(true);
 
   const [greeting, setGreeting] = useState('');
+  const [date, setDate] = useState<Date | undefined>(new Date());
 
   // Extract first name
   const getFirstName = (fullName: string | undefined | null) => {
@@ -160,18 +165,7 @@ const DashboardPage = () => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Monthly Jobs</CardTitle>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  className="h-4 w-4 text-muted-foreground"
-                >
-                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                </svg>
+                <HardHat className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{monthlyJobs}</div>
@@ -182,18 +176,7 @@ const DashboardPage = () => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Weekly Jobs</CardTitle>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  className="h-4 w-4 text-muted-foreground"
-                >
-                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                </svg>
+                <HardHat className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{weeklyJobs}</div>
@@ -204,18 +187,7 @@ const DashboardPage = () => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Daily Jobs</CardTitle>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  className="h-4 w-4 text-muted-foreground"
-                >
-                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                </svg>
+                <HardHat className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{dailyJobs}</div>
@@ -277,6 +249,29 @@ const DashboardPage = () => {
         ) : (
           <p className="text-gray-600 dark:text-gray-300 mt-2">No recent activities.</p>
         )}
+      </div>
+
+      {/* Floating Calendar Button */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="default"
+              size="icon"
+              className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              <CalendarIcon className="h-6 w-6" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="end">
+            <Calendar
+              mode="single"
+              selected={date}
+              onSelect={setDate}
+              className="rounded-md border"
+            />
+          </PopoverContent>
+        </Popover>
       </div>
     </div>
   );

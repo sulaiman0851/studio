@@ -1,10 +1,12 @@
 'use client';
 
-import { Home, BarChart2, Settings, Users, Folder, X, FileText, Camera } from 'lucide-react';
+import { Home, BarChart2, Settings, Users, Folder, X, FileText, Camera, Palette, ChevronDown, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { useTheme, Theme } from '@/components/theme-provider';
+import { useState } from 'react';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -13,6 +15,8 @@ interface SidebarProps {
 
 const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
   const { currentUser, loading, role } = useAuth(); // Import role
+  const { theme, setTheme } = useTheme();
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const getTwoWordsFullName = (fullName: string | undefined | null) => {
     if (!fullName) return 'User';
@@ -30,8 +34,15 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
     { name: 'Team', icon: Users, path: '/dashboard/team' },
     { name: 'Job Input', icon: FileText, path: '/dashboard/job-input' },
     { name: 'Job List', icon: FileText, path: '/dashboard/jobs' },
-    { name: 'Settings', icon: Settings, path: '/dashboard/settings' },
+    // Settings is handled separately
     { name: 'Geotag Photo', icon: Camera, path: '/dashboard/geotag' },
+  ];
+
+  const themes: { name: string; value: Theme; color: string }[] = [
+    { name: 'White', value: 'light', color: 'bg-white border-gray-200' },
+    { name: 'Dark', value: 'dark', color: 'bg-slate-900 border-slate-700' },
+    { name: 'Matcha', value: 'matcha', color: 'bg-[#f7f9f2] border-[#dbead5]' }, // Approximate matcha colors
+    { name: 'Mocha', value: 'mocha', color: 'bg-[#fffbf7] border-[#e8e0d5]' }, // Approximate mocha colors
   ];
 
   return (
@@ -87,7 +98,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
           )}
         </div>
 
-        <nav className="flex-1 px-2 py-4 space-y-2">
+        <nav className="flex-1 px-2 py-4 space-y-2 overflow-y-auto">
           {menuItems.map((item) => (
             <Link
               key={item.name}
@@ -99,6 +110,54 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
               {item.name}
             </Link>
           ))}
+
+          {/* Settings with Submenu */}
+          <div>
+            <button
+              onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+              className="flex items-center w-full px-4 py-2 text-gray-300 rounded-md hover:bg-gray-700 hover:text-white transition-colors justify-between"
+            >
+              <div className="flex items-center">
+                <Settings className="w-5 h-5 mr-3" />
+                Settings
+              </div>
+              {isSettingsOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+            
+            {isSettingsOpen && (
+              <div className="pl-12 pr-4 py-2 space-y-2 bg-gray-900/50 rounded-md mt-1 mx-2">
+                <Link
+                  href="/dashboard/settings"
+                  onClick={() => setIsOpen(false)}
+                  className="block text-sm text-gray-400 hover:text-white py-1"
+                >
+                  General Settings
+                </Link>
+                
+                <div className="pt-2">
+                  <p className="text-xs text-gray-500 uppercase font-semibold mb-2 flex items-center">
+                    <Palette className="w-3 h-3 mr-1" /> Theme
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {themes.map((t) => (
+                      <button
+                        key={t.value}
+                        onClick={() => setTheme(t.value)}
+                        className={cn(
+                          "text-xs px-2 py-1 rounded border transition-all flex items-center justify-center",
+                          theme === t.value 
+                            ? "bg-primary text-primary-foreground border-primary font-medium ring-1 ring-white" 
+                            : "bg-gray-800 text-gray-400 border-gray-700 hover:bg-gray-700"
+                        )}
+                      >
+                        {t.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Admin Section */}
           {role === 'admin' && (
