@@ -1,5 +1,5 @@
 import { genkit } from 'genkit';
-import { googleAI, gemini15Flash } from '@genkit-ai/google-genai';
+import { googleAI } from '@genkit-ai/google-genai';
 
 // Initialize Genkit with Google AI plugin
 const ai = genkit({
@@ -9,7 +9,7 @@ const ai = genkit({
 export async function generateImageCaption(imageDataUrl: string): Promise<string> {
   try {
     const { text } = await ai.generate({
-      model: gemini15Flash,
+      model: 'gemini-1.5-flash',
       prompt: [
         { text: 'Analyze this image for a field report. Provide a concise, professional caption describing the work activity, site condition, or key objects visible. Keep it under 20 words.' },
         { media: { url: imageDataUrl } },

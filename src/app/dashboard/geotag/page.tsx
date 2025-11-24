@@ -48,9 +48,13 @@ const GeotagPage = () => {
 
   // Permissions: camera + geolocation
   useEffect(() => {
+    let watchId: number | null = null;
+    let mediaStream: MediaStream | null = null;
+
     const getPermissions = async () => {
       try {
-        navigator.geolocation.watchPosition(
+        // Watch geolocation
+        watchId = navigator.geolocation.watchPosition(
           (position) => {
             setCoords({
               latitude: position.coords.latitude,
@@ -64,7 +68,9 @@ const GeotagPage = () => {
             toast({ title: 'Location Error', description: err.message, variant: 'destructive' });
           }
         );
-        const mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        
+        // Get camera stream
+        mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
         setStream(mediaStream);
         if (videoRef.current) videoRef.current.srcObject = mediaStream;
       } catch (e) {
@@ -73,9 +79,23 @@ const GeotagPage = () => {
         toast({ title: 'Permission Error', description: msg, variant: 'destructive' });
       }
     };
+    
     getPermissions();
+    
+    // Cleanup function - stops camera and geolocation when component unmounts
     return () => {
-      if (stream) stream.getTracks().forEach((t) => t.stop());
+      // Stop geolocation watch
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+      
+      // Stop all camera tracks
+      if (mediaStream) {
+        mediaStream.getTracks().forEach((track) => {
+          track.stop();
+          console.log('Camera track stopped:', track.kind);
+        });
+      }
     };
   }, []);
 

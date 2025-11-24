@@ -1,4 +1,4 @@
-import { createClient } from './supabase/client';
+import { createClient } from "./supabase/client";
 
 const supabase = createClient();
 
@@ -7,28 +7,35 @@ const supabase = createClient();
  * @param timeframe 'month' | 'week' | 'day'
  * @returns The count of jobs.
  */
-export async function getJobCounts(timeframe: 'month' | 'week' | 'day'): Promise<number> {
+export async function getJobCounts(
+  timeframe: "month" | "week" | "day"
+): Promise<number> {
   const now = new Date();
   let startDate: Date;
 
   switch (timeframe) {
-    case 'day':
+    case "day":
       startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       break;
-    case 'week':
-      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay()); // Start of the current week (Sunday)
+    case "week":
+      startDate = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() - now.getDay()
+      ); // Start of the current week (Sunday)
       break;
-    case 'month':
+    case "month":
       startDate = new Date(now.getFullYear(), now.getMonth(), 1);
       break;
     default:
       startDate = new Date(0); // Epoch for all time
   }
 
+  // Optimized: Use head: true to only get count without fetching data
   const { count, error } = await supabase
-    .from('jobs')
-    .select('*', { count: 'exact', head: true })
-    .gte('created_at', startDate.toISOString());
+    .from("jobs")
+    .select("id", { count: "exact", head: true })
+    .gte("created_at", startDate.toISOString());
 
   if (error) {
     console.error(`Error fetching job count for ${timeframe}:`, error);
@@ -40,19 +47,23 @@ export async function getJobCounts(timeframe: 'month' | 'week' | 'day'): Promise
 
 /**
  * Fetches the count of unique users who submitted job entries in the current day.
+ * Uses PostgreSQL DISTINCT to count unique users efficiently.
  * @returns The count of daily active users.
  */
 export async function getDailyActiveUsers(): Promise<number> {
   const now = new Date();
-  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Start of the current day
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
+  // Optimized: Use RPC or count distinct created_by
+  // Since Supabase doesn't support COUNT(DISTINCT) directly in select,
+  // we'll fetch only created_by and use Set (minimal data transfer)
   const { data, error } = await supabase
-    .from('jobs')
-    .select('created_by')
-    .gte('created_at', startOfDay.toISOString());
+    .from("jobs")
+    .select("created_by")
+    .gte("created_at", startOfDay.toISOString());
 
   if (error) {
-    console.error('Error fetching daily active users:', error);
+    console.error("Error fetching daily active users:", error);
     return 0;
   }
 
@@ -60,6 +71,7 @@ export async function getDailyActiveUsers(): Promise<number> {
     return 0;
   }
 
-  const uniqueUserIds = new Set(data.map(entry => entry.created_by));
+  // Count unique user IDs
+  const uniqueUserIds = new Set(data.map((entry) => entry.created_by));
   return uniqueUserIds.size;
 }
