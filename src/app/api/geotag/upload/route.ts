@@ -2,20 +2,38 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
+import { createClient } from '@supabase/supabase-js';
 
 export async function POST(req: NextRequest) {
-  const supabase = createRouteHandlerClient({ cookies });
+  let supabase = createRouteHandlerClient({ cookies });
 
   // Log all cookies received by the route handler
   const allCookies = (await cookies()).getAll();
   console.log('API Route: Received cookies:', allCookies);
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  let { data: { user } = {}, error: authError } = await supabase.auth.getUser();
 
   if (authError) {
     console.error('API Route: Supabase auth error:', authError);
   }
   console.log('API Route: Supabase user:', user);
+
+  if (!user) {
+    // Fallback: cek Authorization header
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          global: { headers: { Authorization: `Bearer ${token}` } },
+        }
+      );
+      const { data } = await supabase.auth.getUser();
+      user = data.user;
+    }
+  }
 
   if (!user) {
     console.log('API Route: User not found, returning Unauthorized.');
@@ -54,14 +72,33 @@ export async function POST(req: NextRequest) {
       .getPublicUrl(uploadData.path);
 
     // Insert photo metadata into the database
-    const { error: dbError } = await supabase
+    // Try to insert with file_path, fallback without it if column doesn't exist
+    let dbError;
+    const photoData: any = {
+      user_id: user.id,
+      image_url: publicUrl,
+      latitude,
+      longitude,
+    };
+    
+    // Try with file_path first
+    const { error: insertError } = await supabase
       .from('geotagged_photos')
       .insert({
-        user_id: user.id,
-        image_url: publicUrl,
-        latitude,
-        longitude,
+        ...photoData,
+        file_path: uploadData.path,
       });
+    
+    if (insertError && insertError.message?.includes('file_path')) {
+      // Fallback: insert without file_path if column doesn't exist
+      console.warn('file_path column not found, inserting without it. Please run migration.');
+      const { error: fallbackError } = await supabase
+        .from('geotagged_photos')
+        .insert(photoData);
+      dbError = fallbackError;
+    } else {
+      dbError = insertError;
+    }
 
     if (dbError) {
       console.error('API Route: Database Insert Error:', dbError);
