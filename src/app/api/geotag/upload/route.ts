@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { createClient } from '@supabase/supabase-js';
+import { generateImageCaption } from '@/ai/genkit';
 
 export async function POST(req: NextRequest) {
   let supabase = createRouteHandlerClient({ cookies });
@@ -54,12 +55,19 @@ export async function POST(req: NextRequest) {
     const fileName = `${user.id}/${uuidv4()}.${fileExtension}`;
 
     // Upload image to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const uploadPromise = supabase.storage
       .from('geotagged_photos')
       .upload(fileName, imageBuffer, {
         contentType: `image/${fileExtension}`,
         upsert: false,
       });
+
+    // Generate caption using AI
+    // We pass the full data URL (e.g. data:image/png;base64,...)
+    const captionPromise = generateImageCaption(image);
+
+    const [uploadResult, generatedCaption] = await Promise.all([uploadPromise, captionPromise]);
+    const { data: uploadData, error: uploadError } = uploadResult;
 
     if (uploadError) {
       console.error('API Route: Storage Upload Error:', uploadError);
@@ -79,6 +87,7 @@ export async function POST(req: NextRequest) {
       image_url: publicUrl,
       latitude,
       longitude,
+      caption: generatedCaption,
     };
     
     // Try with file_path first

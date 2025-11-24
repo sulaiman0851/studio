@@ -63,7 +63,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
         )}
       >
         <div className="h-16 flex items-center justify-between px-4 bg-gray-900">
-          <h1 className="text-2xl font-bold">FieldOps</h1>
+          <h1 className="text-2xl font-bold">FieldOps NOA</h1>
           <button onClick={() => setIsOpen(false)} className="md:hidden p-2">
             <X className="h-6 w-6" />
           </button>
