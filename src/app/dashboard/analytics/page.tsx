@@ -45,6 +45,33 @@ const AnalyticsPage = () => {
   const [error, setError] = useState<string | null>(null);
   const supabase = createClient();
 
+  // Scroll-load logic
+  const [visibleCount, setVisibleCount] = useState(10);
+  const observerRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!data) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((prev) => Math.min(prev + 10, data.userMetrics.length));
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (observerRef.current) {
+      observer.observe(observerRef.current);
+    }
+
+    return () => {
+      if (observerRef.current) {
+        observer.unobserve(observerRef.current);
+      }
+    };
+  }, [data?.userMetrics?.length, visibleCount]);
+
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
@@ -128,6 +155,11 @@ const AnalyticsPage = () => {
   // Prepare chart data
   const jobsByTypeData = Object.entries(data.jobsByType).map(([name, value]) => ({ name, value }));
   const jobsByStatusData = Object.entries(data.jobsByStatus).map(([name, value]) => ({ name, value }));
+
+  // Scroll-load logic (Hooks moved to top)
+
+  const sortedUserMetrics = [...data.userMetrics].sort((a, b) => b.totalJobsCreated - a.totalJobsCreated);
+  const visibleUserMetrics = sortedUserMetrics.slice(0, visibleCount);
 
   return (
     <div>
@@ -321,43 +353,47 @@ const AnalyticsPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {data.userMetrics
-                  .sort((a, b) => b.totalJobsCreated - a.totalJobsCreated)
-                  .map((user) => (
-                    <tr key={user.id} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
-                      <td className="p-3">
-                        <div>
-                          <div className="font-medium">{user.fullname || user.username}</div>
-                          <div className="text-sm text-gray-500">@{user.username}</div>
-                        </div>
-                      </td>
-                      <td className="p-3">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${
-                          user.role === 'admin' 
-                            ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' 
-                            : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                        }`}>
-                          {user.role}
-                        </span>
-                      </td>
-                      <td className="p-3 text-right font-medium">{user.totalJobsCreated}</td>
-                      <td className="p-3 text-right">{user.totalJobsAssigned}</td>
-                      <td className="p-3 text-right text-green-600 dark:text-green-400">{user.completedJobs}</td>
-                      <td className="p-3 text-right text-yellow-600 dark:text-yellow-400">{user.pendingJobs}</td>
-                      <td className="p-3 text-right">{user.totalPhotos}</td>
-                      <td className="p-3 text-right">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${
-                          user.jobsLast7Days > 0 
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-                            : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
-                        }`}>
-                          {user.jobsLast7Days}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                {visibleUserMetrics.map((user) => (
+                  <tr key={user.id} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <td className="p-3">
+                      <div>
+                        <div className="font-medium">{user.fullname || user.username}</div>
+                        <div className="text-sm text-gray-500">@{user.username}</div>
+                      </div>
+                    </td>
+                    <td className="p-3">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        user.role === 'admin' 
+                          ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' 
+                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                      }`}>
+                        {user.role}
+                      </span>
+                    </td>
+                    <td className="p-3 text-right font-medium">{user.totalJobsCreated}</td>
+                    <td className="p-3 text-right">{user.totalJobsAssigned}</td>
+                    <td className="p-3 text-right text-green-600 dark:text-green-400">{user.completedJobs}</td>
+                    <td className="p-3 text-right text-yellow-600 dark:text-yellow-400">{user.pendingJobs}</td>
+                    <td className="p-3 text-right">{user.totalPhotos}</td>
+                    <td className="p-3 text-right">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        user.jobsLast7Days > 0 
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                          : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                      }`}>
+                        {user.jobsLast7Days}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
+            {/* Sentinel element for infinite scroll */}
+            {visibleCount < data.userMetrics.length && (
+              <div ref={observerRef} className="py-4 text-center text-sm text-muted-foreground">
+                Loading more...
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

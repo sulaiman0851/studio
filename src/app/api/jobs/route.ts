@@ -42,28 +42,29 @@ export async function GET(req: NextRequest) {
     .select('*', { count: 'exact' })
     .or(`created_by.eq.${user.id},assigned_to.eq.${user.id}`);
 
-  // Apply Date Filters
+  // Apply Date Filters - Using created_at instead of due_date
+  // This ensures jobs without due_date still appear in filtered results
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   if (filter === 'today') {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    query = query.gte('due_date', today.toISOString()).lt('due_date', tomorrow.toISOString());
+    query = query.gte('created_at', today.toISOString()).lt('created_at', tomorrow.toISOString());
   } else if (filter === 'week') {
     const startOfWeek = new Date(today);
     startOfWeek.setDate(today.getDate() - today.getDay()); // Sunday
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(startOfWeek.getDate() + 7);
-    query = query.gte('due_date', startOfWeek.toISOString()).lt('due_date', endOfWeek.toISOString());
+    query = query.gte('created_at', startOfWeek.toISOString()).lt('created_at', endOfWeek.toISOString());
   } else if (filter === 'month') {
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
-    query = query.gte('due_date', startOfMonth.toISOString()).lt('due_date', endOfMonth.toISOString());
+    query = query.gte('created_at', startOfMonth.toISOString()).lt('created_at', endOfMonth.toISOString());
   } else if (filter === 'year') {
     const startOfYear = new Date(today.getFullYear(), 0, 1);
     const endOfYear = new Date(today.getFullYear() + 1, 0, 1);
-    query = query.gte('due_date', startOfYear.toISOString()).lt('due_date', endOfYear.toISOString());
+    query = query.gte('created_at', startOfYear.toISOString()).lt('created_at', endOfYear.toISOString());
   }
 
   // Apply Search

@@ -29,7 +29,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
 
   const menuItems = [
     { name: 'Dashboard', icon: Home, path: '/dashboard' },
-    { name: 'Analytics', icon: BarChart2, path: '/dashboard/analytics' },
+    { name: 'Team Analytics', icon: BarChart2, path: '/dashboard/analytics' },
     { name: 'Projects', icon: Folder, path: '/dashboard/projects' },
     { name: 'Team', icon: Users, path: '/dashboard/team' },
     { name: 'Job Input', icon: FileText, path: '/dashboard/job-input' },

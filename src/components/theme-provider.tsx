@@ -12,7 +12,7 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('light');
+  const [theme, setTheme] = useState<Theme>('dark');
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') as Theme;
@@ -28,9 +28,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     root.classList.add('theme-transition');
 
     root.classList.remove('light', 'dark', 'matcha', 'mocha');
-    if (theme !== 'light') {
-      root.classList.add(theme);
-    }
+    root.classList.add(theme);
     localStorage.setItem('theme', theme);
 
     // Remove transition class after timeout

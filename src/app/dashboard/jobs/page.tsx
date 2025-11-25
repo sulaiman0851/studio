@@ -27,6 +27,7 @@ interface Job {
 }
 
 type FilterType = 'today' | 'week' | 'month' | 'year' | 'all';
+type StatusFilter = 'all' | 'pending-approval' | 'completed-unapproved' | 'approved';
 
 const JobsPage = () => {
   const supabase = createClient();
@@ -35,6 +36,7 @@ const JobsPage = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [filter, setFilter] = useState<FilterType>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -357,13 +359,25 @@ const JobsPage = () => {
         </Select>
       </div>
 
+      {/* Time Filter */}
       <div className="flex space-x-2 mb-4 overflow-x-auto pb-2">
-        <Button variant={filter === 'all' ? 'default' : 'outline'} onClick={() => { setFilter('all'); setPage(1); }}>All</Button>
-        <Button variant={filter === 'today' ? 'default' : 'outline'} onClick={() => { setFilter('today'); setPage(1); }}>Today</Button>
-        <Button variant={filter === 'week' ? 'default' : 'outline'} onClick={() => { setFilter('week'); setPage(1); }}>This Week</Button>
-        <Button variant={filter === 'month' ? 'default' : 'outline'} onClick={() => { setFilter('month'); setPage(1); }}>This Month</Button>
-        <Button variant={filter === 'year' ? 'default' : 'outline'} onClick={() => { setFilter('year'); setPage(1); }}>This Year</Button>
+        <Button variant={filter === 'all' ? 'default' : 'outline'} onClick={() => { setFilter('all'); setPage(1); }}>All Jobs</Button>
+        <Button variant={filter === 'today' ? 'default' : 'outline'} onClick={() => { setFilter('today'); setPage(1); }}>Created Today</Button>
+        <Button variant={filter === 'week' ? 'default' : 'outline'} onClick={() => { setFilter('week'); setPage(1); }}>Created This Week</Button>
+        <Button variant={filter === 'month' ? 'default' : 'outline'} onClick={() => { setFilter('month'); setPage(1); }}>Created This Month</Button>
+        <Button variant={filter === 'year' ? 'default' : 'outline'} onClick={() => { setFilter('year'); setPage(1); }}>Created This Year</Button>
       </div>
+
+      {/* Status Filter - untuk Admin/Senior */}
+      {isAdminOrSenior && (
+        <div className="flex space-x-2 mb-4 overflow-x-auto pb-2">
+          <span className="text-sm font-medium flex items-center mr-2">Status:</span>
+          <Button variant={statusFilter === 'all' ? 'default' : 'outline'} onClick={() => { setStatusFilter('all'); setPage(1); }}>All Status</Button>
+          <Button variant={statusFilter === 'pending-approval' ? 'default' : 'outline'} onClick={() => { setStatusFilter('pending-approval'); setPage(1); }}>Pending Approval</Button>
+          <Button variant={statusFilter === 'completed-unapproved' ? 'default' : 'outline'} onClick={() => { setStatusFilter('completed-unapproved'); setPage(1); }}>Completed (Unapproved)</Button>
+          <Button variant={statusFilter === 'approved' ? 'default' : 'outline'} onClick={() => { setStatusFilter('approved'); setPage(1); }}>Approved</Button>
+        </div>
+      )}
 
       {loadingJobs ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -371,97 +385,109 @@ const JobsPage = () => {
             <CardSkeleton key={i} />
           ))}
         </div>
-      ) : jobs.length === 0 ? (
-        <p>No jobs found.</p>
-      ) : (
-        <>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {jobs.map((job) => (
-              <Card key={job.id} className="flex flex-col">
-                <CardHeader>
-                  <CardTitle className="flex justify-between items-start">
-                    <span className="truncate pr-2" title={job.title}>{job.title}</span>
-                    {isAdminOrSenior && (
-                      <div className="flex space-x-1 shrink-0">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditModal(job)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDeleteJob(job.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex-1 flex flex-col gap-2">
-                  <p className="text-sm text-muted-foreground line-clamp-3">{job.description}</p>
-                  <div className="mt-auto space-y-1 pt-4">
-                    <div className="flex justify-between text-xs">
-                      <span className="font-medium">Status:</span>
-                      <span className={`capitalize ${
-                        job.status === 'approved' ? 'text-emerald-600 font-semibold' : 
-                        job.status === 'completed' ? 'text-green-600' : 
-                        job.status === 'in-progress' ? 'text-blue-600' : 
-                        'text-yellow-600'
-                      }`}>
-                        {job.status}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>Due:</span>
-                      <span>{job.due_date ? new Date(job.due_date).toLocaleDateString() : 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>Created:</span>
-                      <span>{new Date(job.created_at).toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>Updated:</span>
-                      <span>{new Date(job.updated_at).toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>Assigned:</span>
-                      <span className="truncate max-w-[100px]" title={job.assigned_to || 'Self'}>{job.assigned_to || 'Self'}</span>
-                    </div>
-                    {/* Tombol Approve untuk Admin/Senior */}
-                    {isAdminOrSenior && job.status === 'completed' && (
-                      <Button 
-                        onClick={() => handleApproveJob(job.id)} 
-                        className="w-full mt-3"
-                        variant="default"
-                        size="sm"
-                      >
-                        ✓ Approve Job
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+      ) : (() => {
+        // Filter jobs by status on client-side
+        const filteredJobs = jobs.filter(job => {
+          if (statusFilter === 'all') return true;
+          if (statusFilter === 'approved') return job.status === 'approved';
+          if (statusFilter === 'pending-approval') return job.status !== 'approved';
+          if (statusFilter === 'completed-unapproved') return job.status === 'completed';
+          return true;
+        });
 
-          {/* Pagination Controls */}
-          <div className="flex justify-between items-center mt-6">
-            <Button
-              variant="outline"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-            >
-              <ChevronLeft className="h-4 w-4 mr-2" /> Previous
-            </Button>
-            <span className="text-sm text-muted-foreground">
-              Page {page} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-            >
-              Next <ChevronRight className="h-4 w-4 ml-2" />
-            </Button>
-          </div>
-        </>
-      )}
+        return filteredJobs.length === 0 ? (
+          <p>No jobs found.</p>
+        ) : (
+          <>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {filteredJobs.map((job) => (
+                <Card key={job.id} className="flex flex-col">
+                  <CardHeader>
+                    <CardTitle className="flex justify-between items-start">
+                      <span className="truncate pr-2" title={job.title}>{job.title}</span>
+                      {isAdminOrSenior && (
+                        <div className="flex space-x-1 shrink-0">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditModal(job)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDeleteJob(job.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex-1 flex flex-col gap-2">
+                    <p className="text-sm text-muted-foreground line-clamp-3">{job.description}</p>
+                    <div className="mt-auto space-y-1 pt-4">
+                      <div className="flex justify-between text-xs">
+                        <span className="font-medium">Status:</span>
+                        <span className={`capitalize flex items-center gap-1 ${
+                          job.status === 'approved' ? 'text-emerald-600 font-semibold' : 
+                          job.status === 'completed' ? 'text-green-600' : 
+                          job.status === 'in-progress' ? 'text-blue-600' : 
+                          'text-yellow-600'
+                        }`}>
+                          {job.status === 'approved' && <span className="text-emerald-600">✓</span>}
+                          {job.status}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>Due:</span>
+                        <span>{job.due_date ? new Date(job.due_date).toLocaleDateString() : 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>Created:</span>
+                        <span>{new Date(job.created_at).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>Updated:</span>
+                        <span>{new Date(job.updated_at).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>Assigned:</span>
+                        <span className="truncate max-w-[100px]" title={job.assigned_to || 'Self'}>{job.assigned_to || 'Self'}</span>
+                      </div>
+                      {/* Tombol Approve untuk Admin/Senior - untuk job yang belum approved */}
+                      {isAdminOrSenior && job.status !== 'approved' && (
+                        <Button 
+                          onClick={() => handleApproveJob(job.id)} 
+                          className="w-full mt-3"
+                          variant="default"
+                          size="sm"
+                        >
+                          ✓ Approve Job
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Pagination Controls */}
+            <div className="flex justify-between items-center mt-6">
+              <Button
+                variant="outline"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+              >
+                <ChevronLeft className="h-4 w-4 mr-2" /> Previous
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Page {page} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+              >
+                Next <ChevronRight className="h-4 w-4 ml-2" />
+              </Button>
+            </div>
+          </>
+        );
+      })()}
 
       {/* Edit Job Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
