@@ -211,7 +211,7 @@ const SpeedtestPage = () => {
               ${status === "ping" ? "border-green-500 animate-pulse" : ""}
               ${status === "download" ? "border-blue-500 animate-pulse" : ""}
               ${status === "upload" ? "border-purple-500 animate-pulse" : ""}
-              ${status === "complete" ? "border-primary" : ""}
+              ${status === "complete" ? "border-green-500 dark:border-green-400" : ""}
             `}
             >
               <div className="text-center">
@@ -243,7 +243,7 @@ const SpeedtestPage = () => {
                   </div>
                 )}
                 {status === "complete" && (
-                  <div className="text-2xl font-bold text-primary">Done!</div>
+                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">Done!</div>
                 )}
               </div>
             </div>

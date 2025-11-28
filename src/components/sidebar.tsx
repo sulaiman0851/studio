@@ -1,6 +1,6 @@
 'use client';
 
-import { Home, BarChart2, Settings, Users, Folder, X, FileText, Camera, Palette, ChevronDown, ChevronUp } from 'lucide-react';
+import { Home, BarChart2, Settings, Users, Folder, X, FileText, Camera, Palette, ChevronDown, ChevronUp, Gauge } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
@@ -36,7 +36,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
     { name: 'Job List', icon: FileText, path: '/dashboard/jobs' },
     // Settings is handled separately
     { name: 'Geotag Photo', icon: Camera, path: '/dashboard/geotag' },
-    { name: 'Speedtest', icon: BarChart2, path: '/dashboard/speedtest' },
+    { name: 'Speedtest', icon: Gauge, path: '/dashboard/speedtest' },
   ];
 
   const themes: { name: string; value: Theme; color: string }[] = [
