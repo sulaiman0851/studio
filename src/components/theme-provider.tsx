@@ -24,19 +24,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const root = window.document.documentElement;
     
-    // Add transition class
-    root.classList.add('theme-transition');
-
     root.classList.remove('light', 'dark', 'matcha', 'mocha');
     root.classList.add(theme);
     localStorage.setItem('theme', theme);
-
-    // Remove transition class after timeout
-    const timeout = setTimeout(() => {
-      root.classList.remove('theme-transition');
-    }, 500); // Match CSS duration
-
-    return () => clearTimeout(timeout);
   }, [theme]);
 
   return (

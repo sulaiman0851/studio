@@ -36,6 +36,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
     { name: 'Job List', icon: FileText, path: '/dashboard/jobs' },
     // Settings is handled separately
     { name: 'Geotag Photo', icon: Camera, path: '/dashboard/geotag' },
+    { name: 'Speedtest', icon: BarChart2, path: '/dashboard/speedtest' },
   ];
 
   const themes: { name: string; value: Theme; color: string }[] = [
@@ -98,7 +99,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
           )}
         </div>
 
-        <nav className="flex-1 px-2 py-4 space-y-2 overflow-y-auto">
+        <nav className="flex-1 px-2 py-4 space-y-2 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {menuItems.map((item) => (
             <Link
               key={item.name}

@@ -1,24 +1,34 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
-import { HardHat, Calendar as CalendarIcon } from 'lucide-react';
-import { getJobCounts, getDailyActiveUsers } from '@/lib/metrics';
-import { createClient } from '@/lib/supabase/client'; // Import Supabase client
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { useAuth } from '@/hooks/use-auth'; // Import useAuth
-import LoadingAnimation from '@/components/loading-animation';
-import CardSkeleton from '@/components/ui/card-skeleton';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
+import { HardHat, Calendar as CalendarIcon } from "lucide-react";
+import { getDashboardMetrics } from "@/lib/metrics";
+import { createClient } from "@/lib/supabase/client"; // Import Supabase client
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { useAuth } from "@/hooks/use-auth"; // Import useAuth
+import LoadingAnimation from "@/components/loading-animation";
+import CardSkeleton from "@/components/ui/card-skeleton";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 
-const RevenueChart = dynamic(() => import('@/components/charts').then((mod) => mod.RevenueChart), {
-  loading: () => <LoadingAnimation />,
-});
-const UsersChart = dynamic(() => import('@/components/charts').then((mod) => mod.UsersChart), {
-  loading: () => <LoadingAnimation />,
-});
+const RevenueChart = dynamic(
+  () => import("@/components/charts").then((mod) => mod.RevenueChart),
+  {
+    loading: () => <LoadingAnimation />,
+  }
+);
+const UsersChart = dynamic(
+  () => import("@/components/charts").then((mod) => mod.UsersChart),
+  {
+    loading: () => <LoadingAnimation />,
+  }
+);
 
 type JobEntry = {
   id: string;
@@ -36,28 +46,31 @@ const DashboardPage = () => {
   const [weeklyJobs, setWeeklyJobs] = useState<number | null>(null);
   const [dailyJobs, setDailyJobs] = useState<number | null>(null);
   const [dailyActiveUsers, setDailyActiveUsers] = useState<number | null>(null);
+  const [weeklyActiveUsers, setWeeklyActiveUsers] = useState<number | null>(
+    null
+  );
   const [loadingMetrics, setLoadingMetrics] = useState(true);
 
   const [recentActivities, setRecentActivities] = useState<JobEntry[]>([]);
   const [loadingActivities, setLoadingActivities] = useState(true);
 
-  const [greeting, setGreeting] = useState('');
+  const [greeting, setGreeting] = useState("");
   const [date, setDate] = useState<Date | undefined>(new Date());
 
   // Extract first name
   const getFirstName = (fullName: string | undefined | null) => {
-    if (!fullName) return '';
-    return fullName.split(' ')[0];
+    if (!fullName) return "";
+    return fullName.split(" ")[0];
   };
 
   const userFirstName = getFirstName(currentUser?.user_metadata?.full_name);
-  
+
   useEffect(() => {
     const getGreeting = () => {
       const hour = new Date().getHours();
-      if (hour < 12) return 'Good Morning';
-      if (hour < 18) return 'Good Afternoon';
-      return 'Good Evening';
+      if (hour < 12) return "Good Morning";
+      if (hour < 18) return "Good Afternoon";
+      return "Good Evening";
     };
     setGreeting(getGreeting());
   }, []);
@@ -65,53 +78,48 @@ const DashboardPage = () => {
   useEffect(() => {
     const fetchMetrics = async () => {
       setLoadingMetrics(true);
-      const [
-        monthlyCount,
-        weeklyCount,
-        dailyCount,
-        activeUsersCount,
-      ] = await Promise.all([
-        getJobCounts('month'),
-        getJobCounts('week'),
-        getJobCounts('day'),
-        getDailyActiveUsers(),
-      ]);
+      const metrics = await getDashboardMetrics();
 
-      setMonthlyJobs(monthlyCount);
-      setWeeklyJobs(weeklyCount);
-      setDailyJobs(dailyCount);
-      setDailyActiveUsers(activeUsersCount);
+      setMonthlyJobs(metrics.monthlyJobs);
+      setWeeklyJobs(metrics.weeklyJobs);
+      setDailyJobs(metrics.dailyJobs);
+      setDailyActiveUsers(metrics.dailyActiveUsers);
+      setWeeklyActiveUsers(metrics.weeklyActiveUsers);
       setLoadingMetrics(false);
     };
 
     const fetchRecentActivities = async () => {
       setLoadingActivities(true);
-      
+
       // 1. Fetch jobs first without the join
       const { data: jobsData, error: jobsError } = await supabase
-        .from('jobs')
-        .select('*')
-        .order('created_at', { ascending: false })
+        .from("jobs")
+        .select("*")
+        .order("created_at", { ascending: false })
         .limit(5);
 
       if (jobsError) {
-        console.error('Error fetching recent activities:', jobsError.message);
+        console.error("Error fetching recent activities:", jobsError.message);
         setLoadingActivities(false);
         return;
       }
 
       // 2. Extract user IDs
       const jobs = jobsData as any[];
-      const userIds = [...new Set(jobs.map((job: any) => job.user_id || job.created_by).filter(Boolean))] as string[];
+      const userIds = [
+        ...new Set(
+          jobs.map((job: any) => job.user_id || job.created_by).filter(Boolean)
+        ),
+      ] as string[];
 
       // 3. Fetch profiles for these IDs
       let profilesMap: Record<string, { fullname: string }> = {};
-      
+
       if (userIds.length > 0) {
         const { data: profilesData } = await supabase
-          .from('profiles')
-          .select('id, fullname')
-          .in('id', userIds);
+          .from("profiles")
+          .select("id, fullname")
+          .in("id", userIds);
 
         if (profilesData) {
           profilesData.forEach((profile) => {
@@ -124,12 +132,14 @@ const DashboardPage = () => {
       const combinedData: JobEntry[] = jobs.map((job: any) => {
         const userId = job.user_id || job.created_by;
         const profile = profilesMap[userId];
-        
+
         return {
           id: job.id,
           created_at: job.created_at,
           job_type: job.job_type,
-          created_by: profile ? { fullname: profile.fullname } : null,
+          created_by: profile
+            ? { fullname: profile.fullname }
+            : { fullname: job.created_by_name || "Unknown User" },
         };
       });
 
@@ -148,13 +158,16 @@ const DashboardPage = () => {
           Dashboard Overview
         </h1>
         <p className="text-lg text-gray-500 dark:text-gray-400 mt-2">
-          {`Welcome back ${userFirstName || ''}, ${greeting}! Here's a summary of your operations.`}
+          {`Welcome back ${
+            userFirstName || ""
+          }, ${greeting}! Here's a summary of your operations.`}
         </p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
         {loadingMetrics ? (
           <>
+            <CardSkeleton />
             <CardSkeleton />
             <CardSkeleton />
             <CardSkeleton />
@@ -164,40 +177,54 @@ const DashboardPage = () => {
           <>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Monthly Jobs</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Monthly Jobs
+                </CardTitle>
                 <HardHat className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{monthlyJobs}</div>
-                <p className="text-xs text-muted-foreground">Total jobs this month</p>
+                <p className="text-xs text-muted-foreground">
+                  Total jobs this month
+                </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Weekly Jobs</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Weekly Jobs
+                </CardTitle>
                 <HardHat className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{weeklyJobs}</div>
-                <p className="text-xs text-muted-foreground">Total jobs this week</p>
+                <p className="text-xs text-muted-foreground">
+                  Total jobs this week
+                </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Daily Jobs</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Daily Jobs
+                </CardTitle>
                 <HardHat className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{dailyJobs}</div>
-                <p className="text-xs text-muted-foreground">Total jobs today</p>
+                <p className="text-xs text-muted-foreground">
+                  Total jobs today
+                </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Daily Active Users</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Daily Active Users
+                </CardTitle>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
@@ -215,7 +242,38 @@ const DashboardPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{dailyActiveUsers}</div>
-                <p className="text-xs text-muted-foreground">Users submitting jobs today</p>
+                <p className="text-xs text-muted-foreground">
+                  Users submitting jobs today
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Weekly Active Users
+                </CardTitle>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  className="h-4 w-4 text-muted-foreground"
+                >
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{weeklyActiveUsers}</div>
+                <p className="text-xs text-muted-foreground">
+                  Users submitting jobs this week
+                </p>
               </CardContent>
             </Card>
           </>
@@ -229,7 +287,9 @@ const DashboardPage = () => {
 
       {/* Recent Activity Section */}
       <div className="mt-8 bg-white p-6 rounded-lg shadow-md dark:bg-gray-800">
-        <h3 className="text-xl font-semibold text-gray-800 dark:text-white">Recent Activity</h3>
+        <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
+          Recent Activity
+        </h3>
         {loadingActivities ? (
           <div className="mt-4 space-y-3">
             <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
@@ -242,12 +302,16 @@ const DashboardPage = () => {
           <div className="mt-4 space-y-3">
             {recentActivities.map((activity) => (
               <p key={activity.id} className="text-gray-600 dark:text-gray-300">
-                - {activity.created_by?.fullname || 'Unknown User'} submitted a '{activity.job_type}' job on {new Date(activity.created_at).toLocaleString()}.
+                - {activity.created_by?.fullname || "Unknown User"} submitted a
+                '{activity.job_type}' job on{" "}
+                {new Date(activity.created_at).toLocaleString()}.
               </p>
             ))}
           </div>
         ) : (
-          <p className="text-gray-600 dark:text-gray-300 mt-2">No recent activities.</p>
+          <p className="text-gray-600 dark:text-gray-300 mt-2">
+            No recent activities.
+          </p>
         )}
       </div>
 

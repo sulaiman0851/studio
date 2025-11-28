@@ -10,5 +10,12 @@ export function createClient() {
     throw new Error('API KEY TIDAK TERSEDIA!')
   }
 
-  return createBrowserClient(url, key)
+  return createBrowserClient(url, key, {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+      storageKey: 'supabase.auth.token',
+    },
+  })
 }

@@ -16,6 +16,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 // Schema for profile update form
 const profileFormSchema = z.object({
   fullname: z.string().min(3, { message: 'Full name must be at least 3 characters.' }),
+  username: z
+    .string()
+    .min(3, { message: 'Username must be at least 3 characters.' })
+    .regex(/^[a-zA-Z0-9_-]+$/, {
+      message: 'Username can only contain letters, numbers, underscores, and dashes.',
+    }),
 });
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
@@ -63,11 +69,11 @@ const SettingsPage = () => {
       if (currentUser) {
         const { data, error } = await supabase
           .from('profiles')
-          .select('fullname')
+          .select('fullname, username')
           .eq('id', currentUser.id)
           .single();
         if (data) {
-          resetProfileForm({ fullname: data.fullname });
+          resetProfileForm({ fullname: data.fullname, username: data.username });
         }
       }
     };
@@ -79,7 +85,7 @@ const SettingsPage = () => {
     if (!currentUser) return;
     const { error } = await supabase
       .from('profiles')
-      .update({ fullname: data.fullname })
+      .update({ fullname: data.fullname, username: data.username })
       .eq('id', currentUser.id);
 
     if (error) {
@@ -137,6 +143,11 @@ const SettingsPage = () => {
               <Label htmlFor="fullname">Full Name</Label>
               <Input type="text" id="fullname" {...registerProfile('fullname')} />
               {profileErrors.fullname && <p className="text-sm text-red-500">{profileErrors.fullname.message}</p>}
+            </div>
+            <div className="grid w-full max-w-sm items-center gap-1.5">
+              <Label htmlFor="username">Username</Label>
+              <Input type="text" id="username" {...registerProfile('username')} />
+              {profileErrors.username && <p className="text-sm text-red-500">{profileErrors.username.message}</p>}
             </div>
             <Button type="submit" disabled={isSubmittingProfile}>
               {isSubmittingProfile ? 'Updating...' : 'Update Profile'}

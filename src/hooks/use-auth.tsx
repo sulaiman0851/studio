@@ -38,8 +38,10 @@ export function useAuth() {
 
     getUserAndRole();
 
+    // Listen to auth state changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state changed:', event);
         setCurrentUser(session?.user ?? null);
         if (session?.user) {
           const { data: profileData, error: profileError } = await supabase
@@ -63,7 +65,7 @@ export function useAuth() {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [supabase]);
 
   return { currentUser, loading, role };
 }

@@ -161,6 +161,21 @@ const AnalyticsPage = () => {
   const sortedUserMetrics = [...data.userMetrics].sort((a, b) => b.totalJobsCreated - a.totalJobsCreated);
   const visibleUserMetrics = sortedUserMetrics.slice(0, visibleCount);
 
+  // Custom Tooltip for LineChart
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded shadow-lg">
+          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">{label}</p>
+          <p className="text-sm text-blue-600 dark:text-blue-400">
+            Jobs Created: <span className="font-bold">{payload[0].value}</span>
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div>
       <header className="mb-8">
@@ -241,7 +256,7 @@ const AnalyticsPage = () => {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="label" />
                 <YAxis />
-                <Tooltip />
+                <Tooltip content={<CustomTooltip />} />
                 <Legend />
                 <Line type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={2} name="Jobs Created" />
               </LineChart>
@@ -263,7 +278,7 @@ const AnalyticsPage = () => {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="count" fill="#10b981" name="Jobs Created" />
+                <Bar dataKey="count" fill="#10b981" name="Jobs Created" maxBarSize={50} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

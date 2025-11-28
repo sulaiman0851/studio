@@ -7,12 +7,28 @@ export async function deleteUser(userId: string) {
   const supabase = createAdminClient();
 
   try {
-    // 1. Delete the user from the authentication system (auth.users)
+    // 1. Fetch the user's profile to get the name
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('fullname, username')
+      .eq('id', userId)
+      .single();
+
+    const nameToPreserve = profile?.fullname || profile?.username || 'Unknown User';
+
+    // 2. Update jobs to store the name
+    // We use 'as any' to bypass type checking if the column hasn't been generated in types yet
+    const { error: updateError } = await supabase
+      .from('jobs')
+      .update({ created_by_name: nameToPreserve } as any)
+      .eq('created_by', userId);
+
+    if (updateError) {
+      console.error('Error updating jobs with creator name:', updateError);
+    }
+
+    // 3. Delete the user from the authentication system (auth.users)
     // This should cascade to the profiles table if the foreign key is set up with ON DELETE CASCADE.
-    // If not, we might need to delete from profiles manually first.
-    // To be safe and ensure "all connected data" is gone, we can try deleting from profiles first, 
-    // but usually deleting the auth user is the root action.
-    
     const { error: authError } = await supabase.auth.admin.deleteUser(userId);
 
     if (authError) {
