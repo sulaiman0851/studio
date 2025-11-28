@@ -180,7 +180,8 @@ const SpeedtestPage = () => {
                     style={{
                       animation: `flowDown 1.5s ease-in-out infinite`,
                       animationDelay: `${i * 0.25}s`,
-                      top: '-20px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
                     }}
                   />
                 ))}
@@ -196,7 +197,8 @@ const SpeedtestPage = () => {
                     style={{
                       animation: `flowUp 1.5s ease-in-out infinite`,
                       animationDelay: `${i * 0.25}s`,
-                      bottom: '-20px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
                     }}
                   />
                 ))}
@@ -249,28 +251,34 @@ const SpeedtestPage = () => {
             <style jsx>{`
               @keyframes flowDown {
                 0% {
-                  transform: translateY(0) translateX(-50%);
+                  top: -40px;
                   opacity: 0;
                 }
-                50% {
+                20% {
+                  opacity: 0.6;
+                }
+                80% {
                   opacity: 0.6;
                 }
                 100% {
-                  transform: translateY(220px) translateX(-50%);
+                  top: 220px;
                   opacity: 0;
                 }
               }
               
               @keyframes flowUp {
                 0% {
-                  transform: translateY(0) translateX(-50%);
+                  bottom: -40px;
                   opacity: 0;
                 }
-                50% {
+                20% {
+                  opacity: 0.6;
+                }
+                80% {
                   opacity: 0.6;
                 }
                 100% {
-                  transform: translateY(-220px) translateX(-50%);
+                  bottom: 220px;
                   opacity: 0;
                 }
               }
